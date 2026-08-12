@@ -12,7 +12,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="w-full border-t border-[#C5A059]/30 bg-[#FFFDF9] py-6 mt-12 mb-16 md:mb-0">
+    <footer className="hidden md:block w-full border-t border-[#C5A059]/30 bg-[#FFFDF9] py-6 mt-12">
       <div className="max-w-6xl mx-auto px-4 text-center sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center justify-center gap-2 text-xs text-[#6B533E]">
           <ShieldCheck className="w-4 h-4 text-[#C5A059]" />
