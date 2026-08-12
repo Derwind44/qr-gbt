@@ -1,6 +1,6 @@
 export interface Jemaat {
   id: string;
-  id_jemaat: string; // Format: BU-0001060895 (2 Inisial nama - 4 digit no urut - 6 digit DDMMYY)
+  id_jemaat: string; // Format: (2 Inisial Nama)-(4 Digit Random)(DDMMYY), contoh: BU-4829060895
   qr_token: string; // Opaque UUID/Hash encoded in QR code
 
   // Data Diri

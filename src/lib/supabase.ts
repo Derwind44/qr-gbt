@@ -33,13 +33,13 @@ export function verifyAdminPassword(password: string): boolean {
 
 /**
  * Generate Human-Readable ID Jemaat
- * Format: 2 Initials of First Name - 4 Digit Seq - 6 Digit DDMMYY
- * Example: Budi Santoso born 06/08/1995 -> BU-0001060895
+ * Format: (2 Inisial Nama)-(4 Digit Random)(DDMMYY)
+ * Example: Budi Santoso born 06/08/1995 -> BU-4829060895
  */
 export function generateIdJemaat(
   fullName: string,
   birthDate: string,
-  seqNumber: number,
+  _seqNumber?: number,
 ): string {
   const cleanName = fullName.trim().replace(/[^a-zA-Z]/g, "");
   const initials = (
@@ -48,7 +48,7 @@ export function generateIdJemaat(
       : (cleanName + "X").substring(0, 2)
   ).toUpperCase();
 
-  const seqFormatted = String(seqNumber).padStart(4, "0");
+  const random4Digit = Math.floor(1000 + Math.random() * 9000);
 
   // Format birthDate YYYY-MM-DD to DDMMYY
   let ddmmyy = "010100";
@@ -62,7 +62,7 @@ export function generateIdJemaat(
     }
   }
 
-  return `${initials}-${seqFormatted}${ddmmyy}`;
+  return `${initials}-${random4Digit}${ddmmyy}`;
 }
 
 /**

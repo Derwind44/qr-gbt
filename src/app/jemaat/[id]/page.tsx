@@ -7,6 +7,7 @@ import { getJemaatByCodeOrId, deleteJemaat } from '@/lib/supabase';
 import { Jemaat } from '@/lib/types';
 import QRCard from '@/components/QRCard';
 import AdminLoginModal from '@/components/AdminLoginModal';
+import { formatGoogleDriveUrl } from '@/lib/gdrive';
 import {
   ArrowLeft,
   User,
@@ -314,7 +315,7 @@ export default function JemaatDetailPage() {
                   <FileText className="w-3.5 h-3.5 text-[#C5A059]" /> Lampiran Foto KTP
                 </span>
                 <img
-                  src={jemaat.ktp_photo_url}
+                  src={formatGoogleDriveUrl(jemaat.ktp_photo_url)}
                   alt="KTP Jemaat"
                   className="w-full max-h-48 rounded-2xl object-cover border border-[#C5A059]/30 shadow-md"
                 />

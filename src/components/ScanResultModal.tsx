@@ -5,6 +5,7 @@ import { Jemaat } from '@/lib/types';
 import { CheckCircle2, ExternalLink, X, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useEffect } from 'react';
+import { formatGoogleDriveUrl } from '@/lib/gdrive';
 
 interface ScanResultModalProps {
   isOpen: boolean;
@@ -50,7 +51,7 @@ export default function ScanResultModal({
             <div className="flex items-center gap-3">
               {jemaat.profile_photo_url ? (
                 <img
-                  src={jemaat.profile_photo_url}
+                  src={formatGoogleDriveUrl(jemaat.profile_photo_url)}
                   alt={jemaat.full_name}
                   className="w-12 h-12 rounded-2xl object-cover border-2 border-[#C5A059]/40 shrink-0 shadow-sm"
                 />

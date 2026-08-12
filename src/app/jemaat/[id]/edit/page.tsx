@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { getJemaatByCodeOrId, updateJemaat } from '@/lib/supabase';
 import { Jemaat } from '@/lib/types';
 import AdminLoginModal from '@/components/AdminLoginModal';
+import { formatGoogleDriveUrl } from '@/lib/gdrive';
 import {
   ArrowLeft,
   User,
@@ -14,6 +15,7 @@ import {
   AlertCircle,
   ShieldCheck,
   Save,
+  Upload,
 } from 'lucide-react';
 
 export default function EditJemaatPage() {
@@ -84,6 +86,44 @@ export default function EditJemaatPage() {
     }
     loadDetail();
   }, [id]);
+
+  const [uploadingState, setUploadingState] = useState<{ ktp: boolean; profile: boolean }>({ ktp: false, profile: false });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'ktp_photo_url' | 'profile_photo_url') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const stateKey = fieldName === 'ktp_photo_url' ? 'ktp' : 'profile';
+    setUploadingState((prev) => ({ ...prev, [stateKey]: true }));
+
+    try {
+      const { compressImage } = await import('@/lib/imageUtils');
+      const compressedDataUrl = await compressImage(file, 800, 0.7);
+
+      const resBlob = await fetch(compressedDataUrl);
+      const blob = await resBlob.blob();
+      const uploadFile = new File([blob], file.name, { type: file.type || 'image/jpeg' });
+
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', uploadFile);
+
+      const apiRes = await fetch('/api/upload-drive', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      const apiData = await apiRes.json();
+      if (apiRes.ok && apiData.url) {
+        setFormData((prev) => ({ ...prev, [fieldName]: apiData.url }));
+      } else {
+        setFormData((prev) => ({ ...prev, [fieldName]: compressedDataUrl }));
+      }
+    } catch (err) {
+      console.error('FileUpload error:', err);
+    } finally {
+      setUploadingState((prev) => ({ ...prev, [stateKey]: false }));
+    }
+  };
 
   const potentialOptions = [
     'IT / Multimedia',
@@ -289,6 +329,65 @@ export default function EditJemaatPage() {
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl bg-[#FFFDF9] border border-[#C5A059]/40 text-[#2B180B] focus:outline-none focus:border-[#3B2211] resize-none"
               />
+            </div>
+
+            {/* Foto Profil & KTP */}
+            <div className="space-y-2">
+              <label className="font-bold text-[#2B180B]">Foto KTP (URL Google Drive / File)</label>
+              <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#C5A059]/40 space-y-3">
+                <input
+                  type="text"
+                  value={formData.ktp_photo_url || ''}
+                  onChange={(e) => setFormData({ ...formData, ktp_photo_url: e.target.value })}
+                  placeholder="Paste Link Google Drive atau URL foto KTP..."
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#FFFDF9] border border-[#C5A059]/40 text-xs text-[#2B180B] focus:outline-none focus:border-[#3B2211]"
+                />
+                <div className="flex items-center gap-3">
+                  {formData.ktp_photo_url ? (
+                    <img src={formatGoogleDriveUrl(formData.ktp_photo_url)} alt="KTP Preview" className="h-16 rounded-xl object-cover border border-[#C5A059]/40 shadow-sm" />
+                  ) : (
+                    <div className="h-16 w-24 rounded-xl border border-dashed border-[#C5A059]/50 flex flex-col items-center justify-center text-[10px] text-[#6B533E]">
+                      <Upload className="w-4 h-4 text-[#C5A059]" />
+                      <span>Atau Upload</span>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'ktp_photo_url')}
+                    className="text-xs text-[#6B533E] file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:bg-[#3B2211] file:text-[#F3E5C8] hover:file:bg-[#2B180B] cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-bold text-[#2B180B]">Foto Profil Pribadi</label>
+              <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#C5A059]/40 space-y-3">
+                <input
+                  type="text"
+                  value={formData.profile_photo_url || ''}
+                  onChange={(e) => setFormData({ ...formData, profile_photo_url: e.target.value })}
+                  placeholder="Paste Link Google Drive atau URL foto profil..."
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#FFFDF9] border border-[#C5A059]/40 text-xs text-[#2B180B] focus:outline-none focus:border-[#3B2211]"
+                />
+                <div className="flex items-center gap-3">
+                  {formData.profile_photo_url ? (
+                    <img src={formatGoogleDriveUrl(formData.profile_photo_url)} alt="Foto Profil Preview" className="h-16 w-16 rounded-2xl object-cover border-2 border-[#C5A059] shadow-sm" />
+                  ) : (
+                    <div className="h-16 w-16 rounded-2xl border border-dashed border-[#C5A059]/50 flex flex-col items-center justify-center text-[10px] text-[#6B533E]">
+                      <Upload className="w-4 h-4 text-[#C5A059]" />
+                      <span>Upload</span>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'profile_photo_url')}
+                    className="text-xs text-[#6B533E] file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:bg-gold-metallic file:text-[#2B180B] hover:file:opacity-90 cursor-pointer font-bold"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

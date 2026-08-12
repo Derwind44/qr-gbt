@@ -6,6 +6,7 @@ import { Jemaat } from '@/lib/types';
 import { Download, RotateCw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toPng } from 'html-to-image';
+import { formatGoogleDriveUrl } from '@/lib/gdrive';
 
 interface QRCardProps {
   jemaat: Jemaat;
@@ -143,7 +144,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
             <div className="absolute top-[4.8%] left-[12%] right-[12%] h-[40%] overflow-hidden flex items-center justify-center bg-[#FAF6F0] z-0">
               {jemaat.profile_photo_url ? (
                 <img
-                  src={jemaat.profile_photo_url}
+                  src={formatGoogleDriveUrl(jemaat.profile_photo_url)}
                   alt={jemaat.full_name}
                   className="w-full h-full object-cover"
                 />
