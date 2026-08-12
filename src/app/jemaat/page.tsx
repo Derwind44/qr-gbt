@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getAllJemaat } from '@/lib/supabase';
 import { Jemaat } from '@/lib/types';
-import { Search, Users, Filter, CheckCircle2, ChevronRight, QrCode, Phone, MapPin, Tag } from 'lucide-react';
+import { Search, Users, Filter, CheckCircle2, ChevronRight, QrCode, Phone, MapPin, Tag, UserPlus } from 'lucide-react';
 
 export default function JemaatListPage() {
   const [jemaatList, setJemaatList] = useState<Jemaat[]>([]);
@@ -28,19 +28,25 @@ export default function JemaatListPage() {
 
   // Filtered List
   const filteredList = jemaatList.filter((item) => {
+    const codeStr = (item.id_jemaat || '').toLowerCase();
+    const nameStr = item.full_name.toLowerCase();
+    const phoneStr = item.phone || '';
+    const cityStr = (item.city || item.address || '').toLowerCase();
+
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      item.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.qr_code_data.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.phone && item.phone.includes(searchQuery)) ||
-      (item.city && item.city.toLowerCase().includes(searchQuery.toLowerCase()));
+      nameStr.includes(q) ||
+      codeStr.includes(q) ||
+      phoneStr.includes(q) ||
+      cityStr.includes(q);
 
     const matchesCategory =
-      selectedCategory === 'Semua' || item.category === selectedCategory;
+      selectedCategory === 'Semua' || item.category === selectedCategory || item.church_role === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ['Semua', 'Jemaat Umum', 'Pelayan', 'Pemuda', 'Anak'];
+  const categories = ['Semua', 'Pelayan', 'Pemuda', 'Anak', 'Jemaat Umum'];
 
   return (
     <div className="space-y-6 py-4">
@@ -59,13 +65,23 @@ export default function JemaatListPage() {
           </p>
         </div>
 
-        <Link
-          href="/scan"
-          className="px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 shrink-0 self-start md:self-auto"
-        >
-          <QrCode className="w-4 h-4" />
-          <span>Pemindai QR Kamera</span>
-        </Link>
+        <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
+          <Link
+            href="/jemaat/tambah"
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>+ Tambah Jemaat Baru</span>
+          </Link>
+
+          <Link
+            href="/scan"
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
+          >
+            <QrCode className="w-4 h-4" />
+            <span>Pemindai QR</span>
+          </Link>
+        </div>
       </div>
 
       {/* Controls Bar: Search Input & Category Filter */}
@@ -75,7 +91,7 @@ export default function JemaatListPage() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Cari Nama, No HP, atau Kode (gbt-XXXXXXXXXX)..."
+            placeholder="Cari Nama, No HP, atau ID Jemaat (BU-0001060895)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
@@ -108,57 +124,63 @@ export default function JemaatListPage() {
         </div>
       ) : filteredList.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredList.map((item) => (
-            <Link
-              key={item.id}
-              href={`/jemaat/${item.id}`}
-              className="glass-card rounded-2xl p-5 border border-slate-800/80 hover:border-indigo-500/40 flex flex-col justify-between space-y-4 group transition-all"
-            >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                    {item.qr_code_data}
-                  </span>
-                  <span className="text-xs font-medium text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    {item.status || 'Aktif'}
-                  </span>
-                </div>
+          {filteredList.map((item) => {
+            const displayId = item.id_jemaat || item.id;
+            return (
+              <Link
+                key={item.id}
+                href={`/jemaat/${item.id}`}
+                className="glass-card rounded-2xl p-5 border border-slate-800/80 hover:border-indigo-500/40 flex flex-col justify-between space-y-4 group transition-all"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                      {displayId}
+                    </span>
+                    <span className="text-xs font-medium text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      {item.status || 'Aktif'}
+                    </span>
+                  </div>
 
-                <div>
-                  <h3 className="font-bold text-lg text-white group-hover:text-indigo-300 transition-colors">
-                    {item.full_name}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                    <Tag className="w-3 h-3 text-indigo-400" />
-                    <span>{item.category || 'Jemaat Umum'}</span>
+                  <div className="flex items-start gap-3">
+                    {item.profile_photo_url ? (
+                      <img src={item.profile_photo_url} alt={item.full_name} className="w-12 h-12 rounded-xl object-cover border border-slate-700 shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-lg shrink-0">
+                        {item.full_name.charAt(0)}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-bold text-base text-white group-hover:text-indigo-300 transition-colors line-clamp-1">
+                        {item.full_name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                        <Tag className="w-3 h-3 text-indigo-400" />
+                        <span>{item.church_role || item.category || 'Jemaat Umum'}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Sub Info & View Detail Link */}
-              <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-                <div className="flex items-center gap-3">
-                  {item.phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="w-3 h-3 text-slate-500" />
-                      {item.phone}
-                    </span>
-                  )}
-                  {item.city && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-slate-500" />
-                      {item.city}
-                    </span>
-                  )}
+                {/* Sub Info & View Detail Link */}
+                <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+                  <div className="flex items-center gap-3 truncate">
+                    {item.phone && (
+                      <span className="flex items-center gap-1 truncate">
+                        <Phone className="w-3 h-3 text-slate-500" />
+                        {item.phone}
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="text-indigo-400 font-semibold flex items-center gap-0.5 group-hover:translate-x-1 transition-transform shrink-0">
+                    Detail <ChevronRight className="w-4 h-4" />
+                  </span>
                 </div>
-
-                <span className="text-indigo-400 font-semibold flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                  Detail <ChevronRight className="w-4 h-4" />
-                </span>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       ) : (
         <div className="glass-panel rounded-3xl p-12 text-center space-y-3 border border-slate-800">
@@ -174,3 +196,4 @@ export default function JemaatListPage() {
     </div>
   );
 }
+

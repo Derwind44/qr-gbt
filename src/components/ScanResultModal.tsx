@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Jemaat } from '@/lib/types';
-import { CheckCircle2, User, Phone, MapPin, ExternalLink, X, AlertCircle } from 'lucide-react';
+import { CheckCircle2, ExternalLink, X, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useEffect } from 'react';
 
@@ -31,8 +31,10 @@ export default function ScanResultModal({
 
   if (!isOpen) return null;
 
+  const displayId = jemaat?.id_jemaat || jemaat?.id;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-md glass-panel rounded-3xl p-6 border border-slate-700 shadow-2xl space-y-5 bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950/50">
         {/* Close Button */}
         <button
@@ -46,12 +48,20 @@ export default function ScanResultModal({
           <>
             {/* Header Badge */}
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
+              {jemaat.profile_photo_url ? (
+                <img
+                  src={jemaat.profile_photo_url}
+                  alt={jemaat.full_name}
+                  className="w-12 h-12 rounded-2xl object-cover border border-emerald-500/40 shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+              )}
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                  QR ValidTerdeteksi
+                  QR Terverifikasi
                 </span>
                 <h2 className="text-xl font-bold text-white tracking-tight">
                   {jemaat.full_name}
@@ -62,16 +72,16 @@ export default function ScanResultModal({
             {/* Primary Data Card */}
             <div className="bg-slate-950/60 rounded-2xl p-4 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
-                <span className="text-slate-400">Kode QR:</span>
+                <span className="text-slate-400">ID Jemaat:</span>
                 <span className="font-mono font-bold text-indigo-300 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">
-                  {jemaat.qr_code_data}
+                  {displayId}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-slate-400 block text-[10px]">Kategori</span>
-                  <span className="font-medium text-slate-200">{jemaat.category || 'Jemaat Umum'}</span>
+                  <span className="text-slate-400 block text-[10px]">Jabatan / Kategori</span>
+                  <span className="font-medium text-slate-200">{jemaat.church_role || jemaat.category || 'Jemaat Umum'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[10px]">Status</span>
@@ -118,16 +128,16 @@ export default function ScanResultModal({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
                   Data Tidak Ditemukan
                 </span>
-                <h2 className="text-lg font-bold text-white">Kode Tidak Terdaftar</h2>
+                <h2 className="text-lg font-bold text-white">Token QR Tidak Terdaftar</h2>
               </div>
             </div>
 
             <div className="bg-slate-950/60 rounded-2xl p-4 border border-slate-800 text-xs text-slate-300 space-y-2">
               <p>
-                Kode QR yang discan adalah: <strong className="font-mono text-indigo-300">{scannedCode}</strong>
+                Token QR yang discan: <strong className="font-mono text-indigo-300">{scannedCode}</strong>
               </p>
               <p className="text-slate-400">
-                Data belum ada di Supabase. Pastikan formulir Google Form sudah diisi atau buat data baru.
+                Data belum tersimpan di Supabase. Pastikan formulir sudah diisi atau buat jemaat baru.
               </p>
             </div>
 
@@ -145,3 +155,4 @@ export default function ScanResultModal({
     </div>
   );
 }
+

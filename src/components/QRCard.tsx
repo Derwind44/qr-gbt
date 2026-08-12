@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Jemaat } from '@/lib/types';
-import { Download, Printer, CheckCircle2, User, Phone, MapPin, Tag } from 'lucide-react';
+import { Download, Printer, CheckCircle2, Phone, MapPin, Tag } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface QRCardProps {
@@ -15,11 +15,13 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
   const cardRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  const displayId = jemaat.id_jemaat || jemaat.id;
+  const qrValue = jemaat.qr_token || jemaat.id_jemaat || jemaat.id;
+
   // Download QR Code image
   const handleDownloadQR = () => {
     setIsDownloading(true);
     try {
-      // Find SVG inside card
       const svgElement = cardRef.current?.querySelector('svg');
       if (!svgElement) {
         alert('Gagal menemukan QR Code untuk diunduh');
@@ -27,7 +29,6 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
         return;
       }
 
-      // Convert SVG to Canvas and Download as PNG
       const svgData = new XMLSerializer().serializeToString(svgElement);
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -37,38 +38,32 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
         canvas.width = img.width + 80;
         canvas.height = img.height + 120;
         if (ctx) {
-          // Fill background
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-          // Draw Title
           ctx.fillStyle = '#1e1b4b';
           ctx.font = 'bold 20px sans-serif';
           ctx.textAlign = 'center';
           ctx.fillText('KARTU QR JEMAAT GBT', canvas.width / 2, 40);
 
-          // Draw QR Image
           ctx.drawImage(img, 40, 60);
 
-          // Draw Member Name & Code
           ctx.fillStyle = '#0f172a';
           ctx.font = 'bold 18px sans-serif';
           ctx.fillText(jemaat.full_name, canvas.width / 2, canvas.height - 40);
 
           ctx.fillStyle = '#475569';
           ctx.font = '14px monospace';
-          ctx.fillText(jemaat.qr_code_data, canvas.width / 2, canvas.height - 18);
+          ctx.fillText(`ID: ${displayId}`, canvas.width / 2, canvas.height - 18);
 
-          // Trigger download
           const pngUrl = canvas.toDataURL('image/png');
           const downloadLink = document.createElement('a');
           downloadLink.href = pngUrl;
-          downloadLink.download = `QR_${jemaat.full_name.replace(/\s+/g, '_')}_${jemaat.qr_code_data}.png`;
+          downloadLink.download = `QR_${jemaat.full_name.replace(/\s+/g, '_')}_${displayId}.png`;
           document.body.appendChild(downloadLink);
           downloadLink.click();
           document.body.removeChild(downloadLink);
 
-          // Confetti celebration
           confetti({
             particleCount: 50,
             spread: 60,
@@ -115,28 +110,39 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
           </span>
         </div>
 
+        {/* Profile photo thumbnail if exists */}
+        {jemaat.profile_photo_url && (
+          <div className="flex justify-center mb-3">
+            <img
+              src={jemaat.profile_photo_url}
+              alt={jemaat.full_name}
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-indigo-500/40 shadow-md"
+            />
+          </div>
+        )}
+
         {/* QR Code Canvas Frame */}
         <div className="bg-white p-5 rounded-2xl shadow-inner flex flex-col items-center justify-center my-2 border border-slate-200">
           <QRCodeSVG
-            value={jemaat.qr_code_data}
+            value={qrValue}
             size={180}
             level="H"
             includeMargin={true}
           />
           <div className="mt-3 text-center">
             <p className="text-xs font-mono font-bold text-slate-800 tracking-wider">
-              {jemaat.qr_code_data}
+              ID: {displayId}
             </p>
-            <p className="text-[10px] text-slate-500">Scan QR ini untuk melihat data</p>
+            <p className="text-[10px] text-slate-500">Scan QR ini untuk verifikasi data</p>
           </div>
         </div>
 
         {/* Card Details */}
         <div className="space-y-2 mt-4 text-xs text-slate-300">
-          {jemaat.category && (
+          {jemaat.church_role && (
             <div className="flex items-center gap-2">
               <Tag className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-              <span>Kategori: <strong className="text-slate-100">{jemaat.category}</strong></span>
+              <span>Jabatan: <strong className="text-slate-100">{jemaat.church_role}</strong></span>
             </div>
           )}
           {jemaat.phone && (
@@ -145,10 +151,10 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
               <span>HP: <strong className="text-slate-100">{jemaat.phone}</strong></span>
             </div>
           )}
-          {jemaat.city && (
+          {jemaat.address && (
             <div className="flex items-center gap-2">
               <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-              <span>Kota: <strong className="text-slate-100">{jemaat.city}</strong></span>
+              <span className="truncate">Alamat: <strong className="text-slate-100">{jemaat.address}</strong></span>
             </div>
           )}
         </div>
@@ -177,3 +183,4 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
     </div>
   );
 }
+

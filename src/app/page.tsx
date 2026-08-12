@@ -138,7 +138,7 @@ export default function HomePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 font-bold border border-indigo-500/20">
-                    {j.qr_code_data}
+                    {j.id_jemaat || j.id}
                   </span>
                   <span className="text-[10px] text-emerald-400 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
