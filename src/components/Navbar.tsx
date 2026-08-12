@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { QrCode, Users, Home, UserPlus, ShieldCheck, LogOut, LayoutDashboard } from 'lucide-react';
+import { QrCode, Users, Home, UserPlus, ShieldCheck, LogOut, LayoutDashboard, ClipboardList } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -17,8 +17,8 @@ export default function Navbar() {
     }
   }, [pathname]);
 
-  // Hide header and bottom navigation completely on public standalone scanner page
-  if (pathname === '/qr-scan') {
+  // Hide navbar on standalone public scan page
+  if (pathname === '/scan') {
     return null;
   }
 
@@ -33,7 +33,7 @@ export default function Navbar() {
 
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/scan', label: 'Scan QR', icon: QrCode },
+    { href: '/admin/presensi', label: 'Presensi', icon: ClipboardList },
     { href: '/jemaat', label: 'Daftar Jemaat', icon: Users },
   ];
 
@@ -42,7 +42,7 @@ export default function Navbar() {
       {/* Top Header Navbar */}
       <header className="sticky top-0 z-40 w-full glass-panel border-b border-[#C5A059]/30 bg-[#FFFDF9]/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Brand Logo - GBT Bethlehem Surabaya */}
+          {/* Brand Logo */}
           <Link href={isAdmin ? '/admin' : '/login'} className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-full bg-espresso-metallic border border-[#C5A059] flex items-center justify-center shadow-md shadow-[#3B2211]/20 group-hover:scale-105 transition-transform overflow-hidden shrink-0">
               <img
@@ -86,13 +86,13 @@ export default function Navbar() {
               })}
             </nav>
 
-            {/* Public Scan Shortcut Button */}
+            {/* Public Scan Button */}
             <Link
-              href="/qr-scan"
+              href="/scan"
               className="px-3 py-1.5 rounded-xl bg-gold-metallic text-[#2B180B] text-xs font-bold shadow-xs hover:scale-105 transition-transform flex items-center gap-1"
             >
               <QrCode className="w-3.5 h-3.5 text-[#2B180B]" />
-              <span className="hidden sm:inline">Public Scan</span>
+              <span className="hidden sm:inline">Scan QR</span>
             </Link>
 
             {/* Admin status indicator / Logout */}
@@ -118,7 +118,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation Bar (Very crucial for Mobile-First experience!) */}
+      {/* Mobile Bottom Navigation Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFFDF9]/95 backdrop-blur-lg border-t border-[#C5A059]/30 shadow-2xl px-2 py-1.5 flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
