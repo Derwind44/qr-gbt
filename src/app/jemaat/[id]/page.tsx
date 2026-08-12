@@ -167,8 +167,20 @@ export default function JemaatDetailPage() {
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-[#3B2211] text-[#F3E5C8] border border-[#C5A059]/40">
                     {jemaat.church_role || jemaat.category || 'Anggota'}
                   </span>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-600/30 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                    jemaat.status === 'Nonaktif'
+                      ? 'bg-amber-500/10 text-amber-800 border-amber-600/30'
+                      : jemaat.status === 'Meninggal'
+                      ? 'bg-rose-900/15 text-rose-950 border-rose-900/40 font-black'
+                      : 'bg-emerald-500/10 text-emerald-800 border-emerald-600/30'
+                  }`}>
+                    <CheckCircle2 className={`w-3 h-3 ${
+                      jemaat.status === 'Nonaktif'
+                        ? 'text-amber-600'
+                        : jemaat.status === 'Meninggal'
+                        ? 'text-rose-900'
+                        : 'text-emerald-600'
+                    }`} />
                     {jemaat.status || 'Aktif'}
                   </span>
                 </div>

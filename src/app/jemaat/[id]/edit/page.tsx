@@ -478,6 +478,19 @@ export default function EditJemaatPage() {
               </select>
             </div>
 
+            <div className="space-y-1.5">
+              <label className="font-bold text-[#2B180B]">Status Keanggotaan</label>
+              <select
+                value={formData.status || 'Aktif'}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                className="w-full px-4 py-2.5 rounded-xl bg-[#FFFDF9] border border-[#C5A059]/40 text-[#2B180B] font-semibold focus:outline-none focus:border-[#3B2211]"
+              >
+                <option value="Aktif">Aktif 🟢</option>
+                <option value="Nonaktif">Nonaktif 🟡</option>
+                <option value="Meninggal">Meninggal 🔴</option>
+              </select>
+            </div>
+
             <div className="space-y-2">
               <label className="font-bold text-[#2B180B]">Potensi Yang Dimiliki</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -499,6 +512,21 @@ export default function EditJemaatPage() {
                   );
                 })}
               </div>
+
+              {(formData.potentials || []).some((p) => p.toLowerCase().includes('lain')) && (
+                <div className="space-y-1.5 mt-3 animate-fadeIn">
+                  <label className="font-bold text-[#2B180B] text-xs">
+                    Sebutkan Potensi / Keahlian Lainnya
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.other_potential_desc || ''}
+                    onChange={(e) => setFormData({ ...formData, other_potential_desc: e.target.value })}
+                    placeholder="Contoh: Desain Grafis, Video Editing, Konseling, dll..."
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#FFFDF9] border border-[#C5A059]/40 text-[#2B180B] focus:outline-none focus:border-[#3B2211] text-xs"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

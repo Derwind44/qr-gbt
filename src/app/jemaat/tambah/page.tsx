@@ -64,6 +64,7 @@ export default function TambahJemaatPage() {
 
     // Section 3: Gereja & Pelayanan
     church_role: 'Anggota' as 'Anggota' | 'Pelayanan/Aktivis gereja',
+    status: 'Aktif' as 'Aktif' | 'Nonaktif' | 'Meninggal',
     potentials: [] as string[],
     other_potential_desc: '',
     is_joined_division: 'Tidak' as 'Ya' | 'Tidak',
@@ -215,7 +216,7 @@ export default function TambahJemaatPage() {
       const newJemaat = await createJemaat({
         ...formData,
         category,
-        status: 'Aktif',
+        status: formData.status || 'Aktif',
       });
 
       setCreatedJemaat(newJemaat);
@@ -614,6 +615,30 @@ export default function TambahJemaatPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <label className="font-bold text-[#2B180B]">Status Keanggotaan <span className="text-rose-600">*</span></label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { id: 'Aktif', label: 'Aktif', color: 'bg-emerald-50 text-emerald-800 border-emerald-300' },
+                      { id: 'Nonaktif', label: 'Nonaktif', color: 'bg-amber-50 text-amber-800 border-amber-300' },
+                      { id: 'Meninggal', label: 'Meninggal', color: 'bg-zinc-100 text-zinc-900 border-zinc-400' },
+                    ].map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, status: st.id as any })}
+                        className={`p-3 rounded-2xl text-xs font-bold text-center border transition-all ${
+                          formData.status === st.id
+                            ? 'bg-[#3B2211] text-[#F3E5C8] border-[#C5A059] shadow-md ring-2 ring-[#C5A059]'
+                            : `${st.color} hover:opacity-80`
+                        }`}
+                      >
+                        {st.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <label className="font-bold text-[#2B180B]">2. Potensi Yang Dimiliki <span className="text-rose-600">*</span> (boleh pilih lebih dari 1)</label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {potentialOptions.map((item) => {
@@ -637,7 +662,7 @@ export default function TambahJemaatPage() {
                   </div>
                 </div>
 
-                {formData.potentials.includes('Lain Lain') && (
+                {formData.potentials.some((p) => p.toLowerCase().includes('lain')) && (
                   <div className="space-y-1.5">
                     <label className="font-bold text-[#2B180B]">3. Deskripsi Potensi Lainnya</label>
                     <input

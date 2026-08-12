@@ -147,8 +147,20 @@ export default function JemaatListPage() {
                     <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-md bg-[#3B2211]/10 text-[#3B2211] border border-[#3B2211]/20">
                       {displayId}
                     </span>
-                    <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span className={`text-xs font-bold flex items-center gap-1 ${
+                      item.status === 'Nonaktif'
+                        ? 'text-amber-700'
+                        : item.status === 'Meninggal'
+                        ? 'text-rose-900 font-black'
+                        : 'text-emerald-700'
+                    }`}>
+                      <CheckCircle2 className={`w-3 h-3 ${
+                        item.status === 'Nonaktif'
+                          ? 'text-amber-600'
+                          : item.status === 'Meninggal'
+                          ? 'text-rose-800'
+                          : 'text-emerald-600'
+                      }`} />
                       {item.status || 'Aktif'}
                     </span>
                   </div>

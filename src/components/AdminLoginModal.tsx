@@ -79,14 +79,13 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLog
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="adminGBT"
               required
               className="w-full px-4 py-2.5 rounded-xl bg-[#FFFDF9] border border-[#C5A059]/40 text-sm text-[#2B180B] focus:outline-none focus:border-[#3B2211] font-bold"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[#2B180B]">Password Admin (Format: admin#DDMMYY)</label>
+            <label className="text-xs font-bold text-[#2B180B]">Password Admin</label>
             <div className="relative">
               <input
                 type="password"

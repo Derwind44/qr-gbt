@@ -34,7 +34,7 @@ export interface Jemaat {
 
   // System Metadata
   category?: string;
-  status?: string;
+  status?: 'Aktif' | 'Nonaktif' | 'Meninggal' | string;
   notes?: string;
   created_at?: string;
   updated_at?: string;

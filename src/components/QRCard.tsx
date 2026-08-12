@@ -4,7 +4,6 @@ import { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Jemaat } from '@/lib/types';
 import { Download, RotateCw } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { toPng } from 'html-to-image';
 import { formatGoogleDriveUrl } from '@/lib/gdrive';
 
@@ -23,25 +22,12 @@ function splitNameToMaxTwoLines(fullName: string): string[] {
     return [fullName];
   }
 
-  // Find split index between 1 and words.length - 1 that minimizes line length difference
-  let bestSplit = 1;
-  let minDiff = Infinity;
+  // Split into 2 balanced lines
+  const mid = Math.ceil(words.length / 2);
+  const firstLine = words.slice(0, mid).join(' ');
+  const secondLine = words.slice(mid).join(' ');
 
-  for (let i = 1; i < words.length; i++) {
-    const line1 = words.slice(0, i).join(' ');
-    const line2 = words.slice(i).join(' ');
-    const diff = Math.abs(line1.length - line2.length);
-
-    if (diff < minDiff) {
-      minDiff = diff;
-      bestSplit = i;
-    }
-  }
-
-  return [
-    words.slice(0, bestSplit).join(' '),
-    words.slice(bestSplit).join(' ')
-  ];
+  return [firstLine, secondLine];
 }
 
 export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) {
@@ -53,7 +39,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
   const qrValue = jemaat.qr_token || jemaat.id_jemaat || jemaat.id;
 
   const rawRole = jemaat.church_role === 'Pelayanan/Aktivis gereja' ? 'Pelayan' : (jemaat.church_role || 'Anggota Jemaat');
-  let mainDivision = jemaat.joined_divisions?.[0] || rawRole;
+  let mainDivision = rawRole;
   if (mainDivision === 'Pelayanan/Aktivis gereja') mainDivision = 'Pelayan';
 
   let categoryText = jemaat.category || rawRole;
@@ -63,35 +49,31 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
   const nameLines = splitNameToMaxTwoLines(jemaat.full_name);
 
   // Calculate Next Level Year
-  const nextLevelYear = jemaat.join_year ? parseInt(jemaat.join_year) + 5 : new Date().getFullYear() + 5;
-  const validUntilText = `${jemaat.birth_date || 'DD/MM'} - ${nextLevelYear}`;
+  let validUntilText = 'VALID UNTIL: DEC 2028';
+  if (jemaat.join_year) {
+    const yr = parseInt(jemaat.join_year, 10);
+    if (!isNaN(yr)) {
+      validUntilText = `VALID UNTIL: DEC ${yr + 3}`;
+    }
+  }
 
-  // Pixel-Perfect Screenshot Download using native browser renderer via html-to-image
   const handleDownloadCard = async () => {
-    setIsDownloading(true);
+    if (!cardRef.current || isDownloading) return;
     try {
-      const cardElement = cardRef.current;
-      if (!cardElement) return;
+      setIsDownloading(true);
 
-      // 100% exact 1:1 pixel-perfect screenshot of the rendered DOM card element
-      const dataUrl = await toPng(cardElement, {
+      const targetEl = cardRef.current;
+      const dataUrl = await toPng(targetEl, {
+        quality: 1.0,
         pixelRatio: 3,
         cacheBust: true,
-        quality: 1.0,
       });
 
-      const downloadLink = document.createElement('a');
-      downloadLink.href = dataUrl;
-      downloadLink.download = `Kartu_GBT_${activeSide === 'front' ? 'Depan' : 'Belakang'}_${jemaat.full_name.replace(/\s+/g, '_')}_${displayId}.png`;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.8 },
-      });
+      const fileName = `kartu_jemaat_${jemaat.full_name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${activeSide}.png`;
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = dataUrl;
+      link.click();
     } catch (err) {
       console.error('html-to-image error:', err);
       alert('Gagal mengunduh kartu. Silakan coba lagi.');
@@ -102,7 +84,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      {/* Side Switcher Pills */}
+      {/* Side Switcher Pills & Flip Button */}
       <div className="flex items-center gap-2 bg-[#EFE5DB] p-1 rounded-2xl border border-[#C5A059]/30">
         <button
           type="button"
@@ -128,18 +110,21 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
         </button>
       </div>
 
-      {/* Dynamic ID Card DOM Element */}
-      <div
-        id="printable-qr-card"
-        ref={cardRef}
-        className="w-full max-w-[340px] aspect-[5/8] rounded-[32px] border-2 border-[#C5A059]/40 shadow-2xl relative overflow-hidden bg-[#FFFDF9] transition-all duration-300 shrink-0"
-        style={{
-          boxShadow: '0 20px 40px -15px rgba(59, 34, 17, 0.2), 0 0 25px rgba(197, 160, 89, 0.25)',
-        }}
-      >
-        {/* FRONT SIDE */}
-        {activeSide === 'front' ? (
-          <div className="relative w-full h-full">
+      {/* 3D Flip Card Outer Container */}
+      <div className="w-full max-w-[340px] aspect-[5/8] relative [perspective:1000px] shrink-0">
+        {/* 3D Flipping Card Element */}
+        <div
+          id="printable-qr-card"
+          ref={cardRef}
+          className={`w-full h-full rounded-[32px] border-2 border-[#C5A059]/40 shadow-2xl relative transition-all duration-700 [transform-style:preserve-3d] ${
+            activeSide === 'back' ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'
+          }`}
+          style={{
+            boxShadow: '0 20px 40px -15px rgba(59, 34, 17, 0.2), 0 0 25px rgba(197, 160, 89, 0.25)',
+          }}
+        >
+          {/* FRONT SIDE FACE */}
+          <div className="absolute inset-0 w-full h-full rounded-[32px] overflow-hidden bg-[#FFFDF9] [backface-visibility:hidden]">
             {/* LAYER 1: Photo (z-0, BEHIND card template) */}
             <div className="absolute top-[4.8%] left-[12%] right-[12%] h-[40%] overflow-hidden flex items-center justify-center bg-[#FAF6F0] z-0">
               {jemaat.profile_photo_url ? (
@@ -158,14 +143,14 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
               )}
             </div>
 
-            {/* LAYER 2: ID Card Template Image (z-10, with transparent window, overlays ON TOP of photo!) */}
+            {/* LAYER 2: ID Card Template Image */}
             <img
               src="/notext_front_idcard.png"
               alt="Front Template"
               className="absolute inset-0 w-full h-full object-fill z-10 pointer-events-none"
             />
 
-            {/* LAYER 3: Dynamic Text Overlays (z-20) */}
+            {/* LAYER 3: Dynamic Text Overlays */}
             <div className="absolute inset-0 z-20 pointer-events-none">
               {/* Dynamic Full Name Overlay */}
               <div className="absolute top-[54%] left-4 right-4 text-center">
@@ -193,9 +178,9 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
               </div>
             </div>
           </div>
-        ) : (
-          /* BACK SIDE */
-          <div className="relative w-full h-full">
+
+          {/* BACK SIDE FACE */}
+          <div className="absolute inset-0 w-full h-full rounded-[32px] overflow-hidden bg-[#FFFDF9] [backface-visibility:hidden] [transform:rotateY(180deg)]">
             {/* LAYER 1: Back Card Template Image */}
             <img
               src="/notext_back_idcard.png"
@@ -203,7 +188,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
               className="absolute inset-0 w-full h-full object-fill z-10 pointer-events-none"
             />
 
-            {/* LAYER 2: QR Code & Valid Until Overlays (z-20) */}
+            {/* LAYER 2: QR Code & Valid Until Overlays */}
             <div className="absolute inset-0 z-20 pointer-events-none">
               {/* Dynamic QR Code Overlay Container */}
               <div className="absolute top-[25%] left-0 right-0 flex justify-center">
@@ -217,7 +202,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
                 </div>
               </div>
 
-              {/* Dynamic Valid Until Expiry Overlay (Directly beneath VALID UNTIL label) */}
+              {/* Dynamic Valid Until Expiry Overlay */}
               <div className="absolute bottom-[4%] right-[3%] left-[45%] text-center">
                 <p className="text-[10px] font-black text-[#3B2211] tracking-tight">
                   {validUntilText}
@@ -225,7 +210,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Action Buttons */}
@@ -238,15 +223,22 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
             className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-espresso-metallic text-[#F3E5C8] font-bold text-xs shadow-lg shadow-[#3B2211]/20 transition-all hover:scale-[1.02] active:scale-[0.98] border border-[#C5A059]/40 disabled:opacity-50"
           >
             <Download className="w-4 h-4 text-[#D4AF37]" />
-            <span>{isDownloading ? 'Mengunduh PNG...' : `Unduh ${activeSide === 'front' ? 'Kartu Depan' : 'QR Belakang'} (PNG)`}</span>
+            <span>
+              {isDownloading
+                ? 'Memproses PNG...'
+                : activeSide === 'front'
+                ? 'Unduh Kartu Depan (PNG)'
+                : 'Unduh QR Belakang (PNG)'}
+            </span>
           </button>
+
           <button
             type="button"
-            onClick={() => setActiveSide((prev) => (prev === 'front' ? 'back' : 'front'))}
-            title="Balik Kartu (Flip Card)"
-            className="p-3 rounded-2xl bg-[#FFFDF9] hover:bg-[#FAF6F0] text-[#3B2211] border border-[#C5A059]/40 shadow-sm transition-all"
+            onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
+            title="Putar Kartu (Flip Card)"
+            className="p-3 rounded-2xl bg-[#EFE5DB] hover:bg-[#E5D7C3] text-[#3B2211] border border-[#C5A059]/40 transition-all hover:rotate-180 duration-500 shadow-md"
           >
-            <RotateCw className="w-4 h-4 text-[#C5A059]" />
+            <RotateCw className="w-4 h-4 text-[#3B2211]" />
           </button>
         </div>
       )}
