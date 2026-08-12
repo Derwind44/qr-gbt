@@ -4,9 +4,9 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Data QR Gereja - Pemindai & Kartu Digital Jemaat',
+  title: 'GBT Bethlehem Surabaya - System QR Badge & Data Jemaat',
   description:
-    'Aplikasi Pemindai QR Code Jemaat & Direktori Data Terintegrasi Google Form, Google Sheets, dan Supabase',
+    'Aplikasi Pemindai QR Code Jemaat & Direktori Data GBT Bethlehem Surabaya',
 };
 
 export default function RootLayout({
@@ -16,9 +16,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className="antialiased min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 selection:bg-indigo-500 selection:text-white">
+      <body className="antialiased min-h-screen flex flex-col bg-[#FAF6F0] text-[#2B180B] selection:bg-[#3B2211] selection:text-[#F3E5C8]">
         <Navbar />
-        <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6">
+        <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-4">
           {children}
         </main>
         <Footer />

@@ -3,7 +3,6 @@ export interface Jemaat {
   id_jemaat: string; // Format: BU-0001060895 (2 Inisial nama - 4 digit no urut - 6 digit DDMMYY)
   qr_token: string; // Opaque UUID/Hash encoded in QR code
 
-
   // Data Diri
   nik?: string;
   full_name: string;
@@ -27,7 +26,7 @@ export interface Jemaat {
   mother_name: string; // Wajib
 
   // Data Gereja & Pelayanan
-  church_role: 'Anggota' | 'Pelayanan/Aktivis gereja';
+  church_role: 'Anggota' | 'Pelayan' | 'Pelayanan/Aktivis gereja' | string;
   potentials?: string[]; // Checkboxes
   other_potential_desc?: string;
   is_joined_division: 'Ya' | 'Tidak';
@@ -47,4 +46,3 @@ export interface ScanResultModalProps {
   jemaat: Jemaat | null;
   scannedCode: string;
 }
-

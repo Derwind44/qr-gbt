@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { QrCode, Users, Home, UserPlus, ShieldCheck } from 'lucide-react';
-import AdminLoginModal from './AdminLoginModal';
+import { usePathname, useRouter } from 'next/navigation';
+import { QrCode, Users, Home, UserPlus, ShieldCheck, LogOut, LayoutDashboard } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [showAdminModal, setShowAdminModal] = useState(false);
+  const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -16,38 +15,53 @@ export default function Navbar() {
       const auth = sessionStorage.getItem('admin_authenticated');
       setIsAdmin(auth === 'true');
     }
-  }, [showAdminModal]);
+  }, [pathname]);
+
+  // Hide header and bottom navigation completely on public standalone scanner page
+  if (pathname === '/qr-scan') {
+    return null;
+  }
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('admin_authenticated');
+      sessionStorage.removeItem('admin_login_time');
+    }
+    setIsAdmin(false);
+    router.push('/login');
+  };
 
   const navItems = [
-    { href: '/', label: 'Beranda', icon: Home },
-    { href: '/scan', label: 'Pindai QR', icon: QrCode },
+    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/scan', label: 'Scan QR', icon: QrCode },
     { href: '/jemaat', label: 'Daftar Jemaat', icon: Users },
-    { href: '/jemaat/tambah', label: 'Tambah Data', icon: UserPlus },
   ];
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80">
+      {/* Top Header Navbar */}
+      <header className="sticky top-0 z-40 w-full glass-panel border-b border-[#C5A059]/30 bg-[#FFFDF9]/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <QrCode className="w-5 h-5 text-white" />
+          {/* Brand Logo - GBT Bethlehem Surabaya */}
+          <Link href={isAdmin ? '/admin' : '/login'} className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-full bg-espresso-metallic border border-[#C5A059] flex items-center justify-center shadow-md shadow-[#3B2211]/20 group-hover:scale-105 transition-transform overflow-hidden p-0.5 shrink-0">
+              <div className="w-full h-full rounded-full border border-[#D4AF37]/50 flex items-center justify-center bg-[#2B180B] text-[#D4AF37] font-serif font-bold text-[10px]">
+                GBT
+              </div>
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-indigo-200">
-                  Data QR Gereja
-                </span>
-                <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">
-                  GBT
+              <div className="flex items-baseline gap-1">
+                <span className="font-black text-base sm:text-lg text-[#2B180B] tracking-tight">
+                  bethlehem <span className="text-[#C5A059] font-black text-lg">.</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-400 -mt-0.5">Sistem Verifikasi & Kartu QR</p>
+              <p className="text-[8px] sm:text-[9px] tracking-[0.2em] text-[#6B533E] uppercase font-bold -mt-1">
+                surabaya church
+              </p>
             </div>
           </Link>
 
-          {/* Navigation Links */}
+          {/* Desktop Navigation Links */}
           <div className="flex items-center gap-2">
             <nav className="hidden md:flex items-center gap-1 sm:gap-2">
               {navItems.map((item) => {
@@ -57,41 +71,74 @@ export default function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                       isActive
-                        ? 'bg-indigo-600/90 text-white shadow-md shadow-indigo-600/30 font-semibold'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                        ? 'bg-espresso-metallic text-[#F3E5C8] shadow-md shadow-[#3B2211]/20 border border-[#C5A059]/40'
+                        : 'text-[#523A27] hover:text-[#2B180B] hover:bg-[#F3E5C8]/40'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#D4AF37]' : 'text-[#8C6D4F]'}`} />
                     <span>{item.label}</span>
                   </Link>
                 );
               })}
             </nav>
 
-            {/* Mobile links fallback / Admin indicator */}
-            <button
-              onClick={() => setShowAdminModal(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                isAdmin
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                  : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-700'
-              }`}
+            {/* Public Scan Shortcut Button */}
+            <Link
+              href="/qr-scan"
+              className="px-3 py-1.5 rounded-xl bg-gold-metallic text-[#2B180B] text-xs font-bold shadow-xs hover:scale-105 transition-transform flex items-center gap-1"
             >
-              <ShieldCheck className={`w-3.5 h-3.5 ${isAdmin ? 'text-emerald-400' : 'text-slate-400'}`} />
-              <span className="hidden sm:inline">{isAdmin ? 'Admin Logged In' : 'Login Admin'}</span>
-            </button>
+              <QrCode className="w-3.5 h-3.5 text-[#2B180B]" />
+              <span className="hidden sm:inline">Public Scan</span>
+            </Link>
+
+            {/* Admin status indicator / Logout */}
+            {isAdmin ? (
+              <button
+                onClick={handleLogout}
+                title="Keluar Admin"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/10 border border-rose-600/30 text-rose-800 hover:bg-rose-500/20 transition-all"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#F5EFEB] border border-[#C5A059]/30 text-[#3B2211] hover:bg-[#EFE5DB] transition-all"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>Login</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
 
-      <AdminLoginModal
-        isOpen={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
-        onSuccess={() => setIsAdmin(true)}
-      />
+      {/* Mobile Bottom Navigation Bar (Very crucial for Mobile-First experience!) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFFDF9]/95 backdrop-blur-lg border-t border-[#C5A059]/30 shadow-2xl px-2 py-1.5 flex items-center justify-around">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
+                isActive
+                  ? 'text-[#3B2211] font-black scale-105'
+                  : 'text-[#8C6D4F] hover:text-[#2B180B]'
+              }`}
+            >
+              <div className={`p-1 rounded-lg ${isActive ? 'bg-[#3B2211] text-[#F3E5C8]' : ''}`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] tracking-tight mt-0.5">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
     </>
   );
 }
-

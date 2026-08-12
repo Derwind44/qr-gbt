@@ -5,7 +5,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { getJemaatByCodeOrId } from '@/lib/supabase';
 import { Jemaat } from '@/lib/types';
 import ScanResultModal from '@/components/ScanResultModal';
-import { QrCode, Camera, SwitchCamera, AlertCircle, RefreshCw, Sparkles, Keyboard } from 'lucide-react';
+import { QrCode, Camera, AlertCircle, RefreshCw, Keyboard } from 'lucide-react';
 
 export default function ScanPage() {
   const [scanning, setScanning] = useState(false);
@@ -24,7 +24,6 @@ export default function ScanPage() {
     setIsSearching(true);
 
     try {
-      // Stop scanner temporarily when code detected
       if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
         await html5QrCodeRef.current.pause(true);
       }
@@ -51,7 +50,7 @@ export default function ScanPage() {
       }
 
       await html5QrCodeRef.current.start(
-        { facingMode: 'environment' }, // Rear camera default
+        { facingMode: 'environment' },
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
@@ -93,7 +92,7 @@ export default function ScanPage() {
     }
   };
 
-  const handleManualSubmit = (e: React.FormEvent) => {
+  const handleManualSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (manualCode.trim()) {
       processQrCode(manualCode.trim());
@@ -112,40 +111,40 @@ export default function ScanPage() {
     <div className="max-w-2xl mx-auto space-y-8 py-4">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
-          <QrCode className="w-3.5 h-3.5" />
-          <span>Pemindai QR Code Jemaat</span>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#3B2211]/10 border border-[#C5A059]/40 text-[#3B2211] text-xs font-bold">
+          <QrCode className="w-3.5 h-3.5 text-[#C5A059]" />
+          <span>Pemindai QR Code Jemaat GBT</span>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-white">
-          Scan Kartu QR
+        <h1 className="text-2xl sm:text-4xl font-black text-[#2B180B]">
+          Scan Kartu Akses QR
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
-          Arahkan kamera ke Kartu QR <code className="text-indigo-300 font-mono">gbt-XXXXXXXXXX</code> untuk memverifikasi dan melihat data utama jemaat.
+        <p className="text-xs sm:text-sm text-[#6B533E] max-w-md mx-auto">
+          Arahkan kamera ke Kartu QR <code className="text-[#3B2211] font-mono font-bold">BU-0001060895</code> untuk verifikasi instan.
         </p>
       </div>
 
       {/* Main Scanner Container */}
-      <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-6 shadow-2xl relative overflow-hidden">
+      <div className="glass-panel rounded-3xl p-6 border border-[#C5A059]/40 space-y-6 shadow-xl relative overflow-hidden bg-[#FFFDF9]">
         {/* Scanner Box */}
-        <div className="relative w-full aspect-square max-w-md mx-auto rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 flex flex-col items-center justify-center">
+        <div className="relative w-full aspect-square max-w-md mx-auto rounded-2xl overflow-hidden bg-[#2B180B] border-2 border-[#C5A059]/50 flex flex-col items-center justify-center">
           <div id="qr-reader" className="w-full h-full" />
 
           {!scanning && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-950/90 space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-lg">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#2B180B]/95 space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-[#3B2211] border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37] shadow-lg">
                 <Camera className="w-8 h-8" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-white">Kamera Belum Aktif</h3>
-                <p className="text-xs text-slate-400 max-w-xs">
+                <h3 className="text-base font-bold text-[#F3E5C8]">Kamera Belum Aktif</h3>
+                <p className="text-xs text-[#EAD6B0] max-w-xs">
                   Tekan tombol di bawah untuk mengaktifkan pemindai kamera.
                 </p>
               </div>
               <button
                 onClick={startScanner}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 flex items-center gap-2"
+                className="px-6 py-3 rounded-2xl bg-gold-metallic text-[#2B180B] font-bold text-sm shadow-lg shadow-[#C5A059]/30 transition-all hover:scale-105 flex items-center gap-2"
               >
-                <Camera className="w-4 h-4" />
+                <Camera className="w-4 h-4 text-[#2B180B]" />
                 <span>Aktifkan Kamera</span>
               </button>
             </div>
@@ -153,7 +152,7 @@ export default function ScanPage() {
 
           {/* Scanner Overlay Line when Scanning */}
           {scanning && (
-            <div className="absolute inset-x-8 h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent animate-scan shadow-lg shadow-indigo-500 pointer-events-none" />
+            <div className="absolute inset-x-8 h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent animate-scan shadow-lg shadow-[#D4AF37] pointer-events-none" />
           )}
         </div>
 
@@ -162,7 +161,7 @@ export default function ScanPage() {
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={stopScanner}
-              className="px-5 py-2.5 rounded-xl bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600/30 text-xs font-semibold transition-colors flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-xl bg-rose-500/10 text-rose-800 border border-rose-600/30 hover:bg-rose-500/20 text-xs font-bold transition-colors"
             >
               <span>Matikan Kamera</span>
             </button>
@@ -171,31 +170,31 @@ export default function ScanPage() {
 
         {/* Error Notification */}
         {cameraError && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
             <span>{cameraError}</span>
           </div>
         )}
 
         {/* Manual Code Input Fallback */}
-        <div className="pt-4 border-t border-slate-800 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-            <Keyboard className="w-4 h-4 text-indigo-400" />
-            <span>Atau Ketik Kode QR Secara Manual (Uji Coba):</span>
+        <div className="pt-4 border-t border-[#C5A059]/30 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#2B180B]">
+            <Keyboard className="w-4 h-4 text-[#C5A059]" />
+            <span>Ketik ID / Kode QR Secara Manual:</span>
           </div>
 
           <form onSubmit={handleManualSubmit} className="flex gap-2">
             <input
               type="text"
-              placeholder="Contoh: gbt-8492019482"
+              placeholder="Contoh: BU-0001060895"
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-[#FFFDF9] border border-[#C5A059]/40 text-sm text-[#2B180B] placeholder-[#8C6D4F] focus:outline-none focus:border-[#3B2211] font-mono font-bold"
             />
             <button
               type="submit"
               disabled={!manualCode.trim() || isSearching}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold disabled:opacity-50 transition-colors flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-xl bg-espresso-metallic text-[#F3E5C8] border border-[#C5A059]/40 text-xs font-bold disabled:opacity-50 transition-colors flex items-center gap-1.5 shadow-sm"
             >
               {isSearching ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -206,9 +205,9 @@ export default function ScanPage() {
           </form>
 
           {/* Quick Demo Code buttons */}
-          <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-400">
-            <span>Contoh Kode Tes:</span>
-            {['gbt-8492019482', 'gbt-3920184729', 'gbt-9182736450'].map((code) => (
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-[#6B533E]">
+            <span>Contoh Tes:</span>
+            {['BU-0001060895', 'tok-sample', 'JE-0002140590'].map((code) => (
               <button
                 key={code}
                 type="button"
@@ -216,7 +215,7 @@ export default function ScanPage() {
                   setManualCode(code);
                   processQrCode(code);
                 }}
-                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono transition-colors"
+                className="px-2.5 py-0.5 rounded-md bg-[#FAF6F0] hover:bg-[#EFE5DB] text-[#3B2211] font-mono font-bold border border-[#C5A059]/30 transition-colors"
               >
                 {code}
               </button>
