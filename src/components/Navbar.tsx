@@ -44,10 +44,12 @@ export default function Navbar() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Brand Logo - GBT Bethlehem Surabaya */}
           <Link href={isAdmin ? '/admin' : '/login'} className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-full bg-espresso-metallic border border-[#C5A059] flex items-center justify-center shadow-md shadow-[#3B2211]/20 group-hover:scale-105 transition-transform overflow-hidden p-0.5 shrink-0">
-              <div className="w-full h-full rounded-full border border-[#D4AF37]/50 flex items-center justify-center bg-[#2B180B] text-[#D4AF37] font-serif font-bold text-[10px]">
-                GBT
-              </div>
+            <div className="w-9 h-9 rounded-full bg-espresso-metallic border border-[#C5A059] flex items-center justify-center shadow-md shadow-[#3B2211]/20 group-hover:scale-105 transition-transform overflow-hidden shrink-0">
+              <img
+                src="/logo.png"
+                alt="GBT Bethlehem Surabaya Logo"
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
             <div>
               <div className="flex items-baseline gap-1">

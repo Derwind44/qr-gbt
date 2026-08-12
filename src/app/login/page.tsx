@@ -65,8 +65,12 @@ export default function LoginPage() {
 
         {/* Brand Hero Box */}
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-full bg-espresso-metallic border-2 border-[#D4AF37] flex items-center justify-center text-[#D4AF37] font-serif font-black text-xl mx-auto shadow-xl">
-            GBT
+          <div className="w-16 h-16 rounded-full bg-espresso-metallic border-2 border-[#D4AF37] flex items-center justify-center mx-auto shadow-xl overflow-hidden shrink-0">
+            <img
+              src="/logo.png"
+              alt="GBT Bethlehem Surabaya Logo"
+              className="w-full h-full object-cover rounded-full"
+            />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-[#2B180B] tracking-tight">

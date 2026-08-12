@@ -108,8 +108,12 @@ export default function PublicScanPage() {
       {/* Top Header - Public Scan (Standalone Header, No Footer) */}
       <div className="flex items-center justify-between bg-[#FFFDF9] p-3 sm:p-4 rounded-2xl border border-[#C5A059]/40 shadow-md">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-[#3B2211] border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] font-serif font-extrabold text-xs shadow-sm">
-            GBT
+          <div className="w-9 h-9 rounded-full bg-[#3B2211] border border-[#D4AF37] flex items-center justify-center shadow-sm overflow-hidden shrink-0">
+            <img
+              src="/logo.png"
+              alt="GBT Bethlehem Surabaya Logo"
+              className="w-full h-full object-cover rounded-full"
+            />
           </div>
           <div>
             <h1 className="font-extrabold text-sm sm:text-base text-[#2B180B] leading-tight">

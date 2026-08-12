@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: 'GBT Bethlehem Surabaya - System QR Badge & Data Jemaat',
   description:
     'Aplikasi Pemindai QR Code Jemaat & Direktori Data GBT Bethlehem Surabaya',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
