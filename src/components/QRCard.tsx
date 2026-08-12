@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Jemaat } from '@/lib/types';
 import { Download, RotateCw } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { toPng } from 'html-to-image';
 
 interface QRCardProps {
   jemaat: Jemaat;
@@ -12,11 +13,12 @@ interface QRCardProps {
 }
 
 function splitNameToMaxTwoLines(fullName: string): string[] {
+  if (!fullName) return [''];
   const words = fullName.trim().split(/\s+/).filter(Boolean);
   if (words.length <= 1) return [fullName];
 
-  // Keep single line if short enough (<= 22 chars and <= 3 words)
-  if (fullName.length <= 22 && words.length <= 3) {
+  // Keep single line if short enough (<= 20 chars and <= 3 words)
+  if (fullName.length <= 20 && words.length <= 3) {
     return [fullName];
   }
 
@@ -48,8 +50,14 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
 
   const displayId = jemaat.id_jemaat || jemaat.id;
   const qrValue = jemaat.qr_token || jemaat.id_jemaat || jemaat.id;
-  const mainDivision = jemaat.joined_divisions?.[0] || jemaat.church_role || 'Anggota Jemaat';
-  const categoryText = jemaat.category || jemaat.church_role || 'Jemaat Umum';
+
+  const rawRole = jemaat.church_role === 'Pelayanan/Aktivis gereja' ? 'Pelayan' : (jemaat.church_role || 'Anggota Jemaat');
+  let mainDivision = jemaat.joined_divisions?.[0] || rawRole;
+  if (mainDivision === 'Pelayanan/Aktivis gereja') mainDivision = 'Pelayan';
+
+  let categoryText = jemaat.category || rawRole;
+  if (categoryText === 'Pelayanan/Aktivis gereja') categoryText = 'Pelayan';
+
   const phoneText = jemaat.phone || '-';
   const nameLines = splitNameToMaxTwoLines(jemaat.full_name);
 
@@ -57,137 +65,36 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
   const nextLevelYear = jemaat.join_year ? parseInt(jemaat.join_year) + 5 : new Date().getFullYear() + 5;
   const validUntilText = `${jemaat.birth_date || 'DD/MM'} - ${nextLevelYear}`;
 
-  // High-Resolution Composite Canvas Download
-  const handleDownloadCard = () => {
+  // Pixel-Perfect Screenshot Download using native browser renderer via html-to-image
+  const handleDownloadCard = async () => {
     setIsDownloading(true);
     try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const bgImg = new Image();
+      const cardElement = cardRef.current;
+      if (!cardElement) return;
 
-      const isFront = activeSide === 'front';
-      bgImg.src = isFront ? '/notext_front_idcard.png' : '/notext_back_idcard.png';
+      // 100% exact 1:1 pixel-perfect screenshot of the rendered DOM card element
+      const dataUrl = await toPng(cardElement, {
+        pixelRatio: 3,
+        cacheBust: true,
+        quality: 1.0,
+      });
 
-      bgImg.onload = () => {
-        canvas.width = bgImg.width;
-        canvas.height = bgImg.height;
+      const downloadLink = document.createElement('a');
+      downloadLink.href = dataUrl;
+      downloadLink.download = `Kartu_GBT_${activeSide === 'front' ? 'Depan' : 'Belakang'}_${jemaat.full_name.replace(/\s+/g, '_')}_${displayId}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
 
-        if (!ctx) return;
-
-        if (isFront) {
-          // FRONT SIDE OVERLAYS (Photo drawn FIRST so template image is z-indexed on top!)
-          if (jemaat.profile_photo_url) {
-            const photo = new Image();
-            photo.crossOrigin = 'anonymous';
-            photo.onload = () => {
-              const photoX = canvas.width * 0.12;
-              const photoY = canvas.height * 0.05;
-              const photoWidth = canvas.width * 0.76;
-              const photoHeight = canvas.height * 0.40;
-
-              // 1. Draw photo behind
-              ctx.drawImage(photo, photoX, photoY, photoWidth, photoHeight);
-
-              // 2. Draw card template OVER the photo
-              ctx.drawImage(bgImg, 0, 0);
-
-              drawFrontTextAndExport();
-            };
-            photo.onerror = () => {
-              ctx.drawImage(bgImg, 0, 0);
-              drawFrontTextAndExport();
-            };
-            photo.src = jemaat.profile_photo_url;
-          } else {
-            ctx.drawImage(bgImg, 0, 0);
-            drawFrontTextAndExport();
-          }
-
-          function drawFrontTextAndExport() {
-            if (!ctx) return;
-
-            // 3. Full Name Overlay
-            ctx.fillStyle = '#2D190B';
-            ctx.font = 'bold 34px sans-serif';
-            ctx.textAlign = 'center';
-            const exportNameLines = splitNameToMaxTwoLines(jemaat.full_name);
-            if (exportNameLines.length === 1) {
-              ctx.fillText(exportNameLines[0], canvas.width / 2, canvas.height * 0.56, canvas.width * 0.85);
-            } else {
-              exportNameLines.forEach((line, idx) => {
-                ctx.fillText(line, canvas.width / 2, canvas.height * (0.54 + idx * 0.038), canvas.width * 0.85);
-              });
-            }
-
-            // 4. Division Text Overlay (Inside clean dark espresso pill)
-            ctx.fillStyle = '#FFFDF9';
-            ctx.font = 'bold 20px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(mainDivision, canvas.width / 2, canvas.height * 0.67);
-
-            // 5. ID No, Category, Phone Values
-            ctx.textAlign = 'left';
-            ctx.fillStyle = '#2D190B';
-            ctx.font = 'bold 22px monospace';
-
-            const startX = canvas.width * 0.38;
-            ctx.fillText(displayId, startX, canvas.height * 0.84);
-            ctx.font = 'bold 21px sans-serif';
-            ctx.fillText(categoryText, startX, canvas.height * 0.79);
-            ctx.fillText(phoneText, startX, canvas.height * 0.84);
-
-            exportCanvasPNG();
-          }
-        } else {
-          // BACK SIDE OVERLAYS
-          ctx.drawImage(bgImg, 0, 0);
-
-          const svgElement = cardRef.current?.querySelector('svg');
-          if (svgElement) {
-            const svgData = new XMLSerializer().serializeToString(svgElement);
-            const qrImg = new Image();
-            qrImg.onload = () => {
-              // Reduced QR Size by another 10% (canvas.width * 0.46)
-              const qrSize = canvas.width * 0.46;
-              const qrX = (canvas.width - qrSize) / 2;
-              const qrY = canvas.height * 0.25;
-
-              ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-
-              // Valid Until Expiry Text directly beneath VALID UNTIL label
-              ctx.fillStyle = '#3B2211';
-              ctx.font = 'bold 22px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.fillText(`${validUntilText}`, canvas.width * 0.74, canvas.height * 0.935);
-
-              exportCanvasPNG();
-            };
-            qrImg.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-          } else {
-            exportCanvasPNG();
-          }
-        }
-
-        function exportCanvasPNG() {
-          const pngUrl = canvas.toDataURL('image/png');
-          const downloadLink = document.createElement('a');
-          downloadLink.href = pngUrl;
-          downloadLink.download = `Kartu_GBT_${isFront ? 'Depan' : 'Belakang'}_${jemaat.full_name.replace(/\s+/g, '_')}_${displayId}.png`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-
-          confetti({
-            particleCount: 50,
-            spread: 60,
-            origin: { y: 0.8 },
-          });
-          setIsDownloading(false);
-        }
-      };
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.8 },
+      });
     } catch (err) {
-      console.error(err);
-      alert('Gagal mengunduh kartu.');
+      console.error('html-to-image error:', err);
+      alert('Gagal mengunduh kartu. Silakan coba lagi.');
+    } finally {
       setIsDownloading(false);
     }
   };
@@ -220,11 +127,11 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
         </button>
       </div>
 
-      {/* Dynamic ID Card Canvas Container */}
+      {/* Dynamic ID Card DOM Element */}
       <div
         id="printable-qr-card"
         ref={cardRef}
-        className="w-full max-w-[340px] aspect-[5/8] rounded-[32px] border-2 border-[#C5A059]/40 shadow-2xl relative overflow-hidden bg-[#FFFDF9] transition-all duration-300"
+        className="w-full max-w-[340px] aspect-[5/8] rounded-[32px] border-2 border-[#C5A059]/40 shadow-2xl relative overflow-hidden bg-[#FFFDF9] transition-all duration-300 shrink-0"
         style={{
           boxShadow: '0 20px 40px -15px rgba(59, 34, 17, 0.2), 0 0 25px rgba(197, 160, 89, 0.25)',
         }}
@@ -232,7 +139,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
         {/* FRONT SIDE */}
         {activeSide === 'front' ? (
           <div className="relative w-full h-full">
-            {/* LAYER 1: Photo (z-0, positioned BEHIND card template) */}
+            {/* LAYER 1: Photo (z-0, BEHIND card template) */}
             <div className="absolute top-[4.8%] left-[12%] right-[12%] h-[40%] overflow-hidden flex items-center justify-center bg-[#FAF6F0] z-0">
               {jemaat.profile_photo_url ? (
                 <img
@@ -297,7 +204,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
 
             {/* LAYER 2: QR Code & Valid Until Overlays (z-20) */}
             <div className="absolute inset-0 z-20 pointer-events-none">
-              {/* Dynamic QR Code Overlay Container (Reduced 10% size) */}
+              {/* Dynamic QR Code Overlay Container */}
               <div className="absolute top-[25%] left-0 right-0 flex justify-center">
                 <div className="p-2 bg-white rounded-2xl border-2 border-[#3B2211] shadow-lg flex items-center justify-center">
                   <QRCodeSVG
@@ -330,7 +237,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
             className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-espresso-metallic text-[#F3E5C8] font-bold text-xs shadow-lg shadow-[#3B2211]/20 transition-all hover:scale-[1.02] active:scale-[0.98] border border-[#C5A059]/40 disabled:opacity-50"
           >
             <Download className="w-4 h-4 text-[#D4AF37]" />
-            <span>{isDownloading ? 'Mengolah PNG...' : `Unduh ${activeSide === 'front' ? 'Kartu Depan' : 'QR Belakang'} (PNG)`}</span>
+            <span>{isDownloading ? 'Mengunduh PNG...' : `Unduh ${activeSide === 'front' ? 'Kartu Depan' : 'QR Belakang'} (PNG)`}</span>
           </button>
           <button
             type="button"
