@@ -11,7 +11,7 @@ interface AdminLoginModalProps {
 }
 
 export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLoginModalProps) {
-  const [username, setUsername] = useState('adminGBT');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -27,7 +27,7 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLog
     }
 
     if (!verifyAdminPassword(password)) {
-      setError('Password admin salah / tidak berlaku untuk hari ini.');
+      setError('Password admin salah.');
       return;
     }
 
@@ -79,6 +79,7 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLog
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              placeholder="Masukkan Username"
               required
               className="w-full px-4 py-2.5 rounded-xl bg-[#FFFDF9] border border-[#C5A059]/40 text-sm text-[#2B180B] focus:outline-none focus:border-[#3B2211] font-bold"
             />
@@ -91,7 +92,7 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLog
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password hari ini..."
+                placeholder="••••••••"
                 required
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#FFFDF9] border border-[#C5A059]/40 text-sm text-[#2B180B] focus:outline-none focus:border-[#3B2211] font-bold"
               />

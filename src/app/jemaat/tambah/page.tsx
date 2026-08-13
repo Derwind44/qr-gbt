@@ -22,13 +22,16 @@ import {
 
 export default function TambahJemaatPage() {
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const auth = sessionStorage.getItem('admin_authenticated');
       if (auth !== 'true') {
-        router.push('/login');
+        router.replace('/login');
+        return;
       }
+      setIsAuthenticated(true);
     }
   }, [router]);
 
@@ -228,6 +231,8 @@ export default function TambahJemaatPage() {
       setLoading(false);
     }
   };
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-4">

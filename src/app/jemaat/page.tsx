@@ -13,14 +13,16 @@ export default function JemaatListPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const auth = sessionStorage.getItem('admin_authenticated');
       if (auth !== 'true') {
-        router.push('/login');
+        router.replace('/login');
         return;
       }
+      setIsAuthenticated(true);
     }
 
     async function loadData() {
@@ -57,6 +59,8 @@ export default function JemaatListPage() {
   });
 
   const categories = ['Semua', 'Pelayan', 'Pemuda', 'Anak', 'Jemaat Umum'];
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="space-y-6 py-4">

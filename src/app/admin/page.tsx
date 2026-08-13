@@ -17,7 +17,7 @@ export default function AdminDashboardPage() {
     if (typeof window !== 'undefined') {
       const auth = sessionStorage.getItem('admin_authenticated');
       if (auth !== 'true') {
-        router.push('/login');
+        router.replace('/login');
         return;
       }
       setIsAdmin(true);

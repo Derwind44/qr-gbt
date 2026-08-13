@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { verifyAdminPassword } from '@/lib/supabase';
-import { ShieldCheck, Lock, User, AlertCircle, QrCode, Sparkles } from 'lucide-react';
+import { ShieldCheck, Lock, User, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState('adminGBT');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,7 +31,7 @@ export default function LoginPage() {
     }
 
     if (!verifyAdminPassword(password)) {
-      setErrorMsg('Password Admin salah atau tidak berlaku hari ini.');
+      setErrorMsg('Password Admin salah.');
       return;
     }
 
@@ -49,20 +48,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[85vh] flex flex-col justify-center items-center px-4 py-8">
+    <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-center items-center px-4 py-12">
       {/* Container */}
       <div className="w-full max-w-md space-y-6">
-        {/* Public Scan Shortcut Header */}
-        <div className="flex justify-end">
-          <Link
-            href="/qr-scan"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gold-metallic text-[#2B180B] font-bold text-xs shadow-md hover:scale-105 transition-transform"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span>Public Scanner (Tanpa Login)</span>
-          </Link>
-        </div>
-
         {/* Brand Hero Box */}
         <div className="text-center space-y-2">
           <div className="w-16 h-16 rounded-full bg-espresso-metallic border-2 border-[#D4AF37] flex items-center justify-center mx-auto shadow-xl overflow-hidden shrink-0">
@@ -104,7 +92,7 @@ export default function LoginPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="adminGBT"
+                  placeholder="Masukkan Username"
                   required
                   className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFDF9] border border-[#C5A059]/40 text-sm text-[#2B180B] font-bold focus:outline-none focus:border-[#3B2211]"
                 />
@@ -113,21 +101,18 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#2B180B]">Password Admin (Format: admin#DDMMYY)</label>
+              <label className="text-xs font-bold text-[#2B180B]">Password Admin</label>
               <div className="relative">
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="admin#..."
+                  placeholder="••••••••"
                   required
                   className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFDF9] border border-[#C5A059]/40 text-sm text-[#2B180B] font-bold focus:outline-none focus:border-[#3B2211]"
                 />
                 <Lock className="w-4 h-4 text-[#8C6D4F] absolute left-3.5 top-1/2 -translate-y-1/2" />
               </div>
-              <p className="text-[10px] text-[#6B533E] pt-0.5">
-                Password otomatis berganti tiap hari mengikuti tanggal WIB.
-              </p>
             </div>
 
             <button
@@ -138,16 +123,6 @@ export default function LoginPage() {
               {loading ? 'Masuk ke Dashboard...' : 'MASUK SEBAGAI ADMIN'}
             </button>
           </form>
-
-          {/* Quick Notice */}
-          <div className="pt-3 border-t border-[#C5A059]/20 text-center">
-            <p className="text-[11px] text-[#6B533E]">
-              Butuh scan QR tanpa login?{' '}
-              <Link href="/qr-scan" className="text-[#3B2211] font-bold hover:underline">
-                Klik Buka Pemindai Publik
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>

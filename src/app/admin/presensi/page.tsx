@@ -13,7 +13,7 @@ import {
   Session,
   PresensiRecord,
 } from '@/lib/presensi';
-import AdminLoginModal from '@/components/AdminLoginModal';
+import { useRouter } from 'next/navigation';
 import {
   Camera,
   AlertCircle,
@@ -43,7 +43,8 @@ interface ScanFeedback {
 }
 
 export default function AdminPresensiPage() {
-  const [showAdminModal, setShowAdminModal] = useState(false);
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [presensiList, setPresensiList] = useState<PresensiRecord[]>([]);
@@ -68,9 +69,13 @@ export default function AdminPresensiPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const auth = sessionStorage.getItem('admin_authenticated');
-      if (auth !== 'true') setShowAdminModal(true);
+      if (auth !== 'true') {
+        router.replace('/login');
+      } else {
+        setIsAuthenticated(true);
+      }
     }
-  }, []);
+  }, [router]);
 
   // ---- LOAD SESSIONS ----
   const loadSessions = useCallback(async () => {
@@ -289,14 +294,10 @@ export default function AdminPresensiPage() {
     ? <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
     : <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />;
 
+  if (!isAuthenticated) return null;
+
   return (
     <>
-      <AdminLoginModal
-        isOpen={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
-        onSuccess={() => setShowAdminModal(false)}
-      />
-
       <div className="max-w-5xl mx-auto space-y-6 py-4 pb-24 md:pb-6">
         {/* Page Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">

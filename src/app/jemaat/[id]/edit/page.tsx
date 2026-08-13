@@ -26,7 +26,7 @@ export default function EditJemaatPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Jemaat>>({
     full_name: '',
@@ -60,8 +60,10 @@ export default function EditJemaatPage() {
     if (typeof window !== 'undefined') {
       const auth = sessionStorage.getItem('admin_authenticated');
       if (auth !== 'true') {
-        setShowAdminModal(true);
+        router.replace('/login');
+        return;
       }
+      setIsAuthenticated(true);
     }
 
     async function loadDetail() {
@@ -189,6 +191,8 @@ export default function EditJemaatPage() {
       setSaving(false);
     }
   };
+
+  if (!isAuthenticated) return null;
 
   if (loading) {
     return (
@@ -572,12 +576,6 @@ export default function EditJemaatPage() {
           </button>
         </div>
       </form>
-
-      <AdminLoginModal
-        isOpen={showAdminModal}
-        onClose={() => router.push(`/jemaat/${id}`)}
-        onSuccess={() => setShowAdminModal(false)}
-      />
     </div>
   );
 }

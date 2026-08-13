@@ -17,8 +17,8 @@ export default function Navbar() {
     }
   }, [pathname]);
 
-  // Hide navbar on standalone public scan page
-  if (pathname === '/scan') {
+  // Hide header and bottom navigation completely on public scanner and login page
+  if (pathname === '/scan' || pathname === '/login') {
     return null;
   }
 

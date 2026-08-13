@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { getJemaatByCodeOrId, deleteJemaat } from '@/lib/supabase';
 import { Jemaat } from '@/lib/types';
 import QRCard from '@/components/QRCard';
-import AdminLoginModal from '@/components/AdminLoginModal';
 import { formatGoogleDriveUrl } from '@/lib/gdrive';
 import {
   ArrowLeft,
@@ -24,12 +23,20 @@ export default function JemaatDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [jemaat, setJemaat] = useState<Jemaat | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | null>(null);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const auth = sessionStorage.getItem('admin_authenticated');
+      if (auth !== 'true') {
+        router.replace('/login');
+        return;
+      }
+      setIsAuthenticated(true);
+    }
+
     async function loadDetail() {
       if (!id) return;
       try {
@@ -42,27 +49,13 @@ export default function JemaatDetailPage() {
       }
     }
     loadDetail();
-  }, [id]);
+  }, [id, router]);
 
   const handleEditClick = () => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem('admin_authenticated') === 'true') {
-      router.push(`/jemaat/${id}/edit`);
-    } else {
-      setPendingAction('edit');
-      setShowAdminModal(true);
-    }
+    router.push(`/jemaat/${id}/edit`);
   };
 
   const handleDeleteClick = async () => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem('admin_authenticated') === 'true') {
-      executeDelete();
-    } else {
-      setPendingAction('delete');
-      setShowAdminModal(true);
-    }
-  };
-
-  const executeDelete = async () => {
     if (!jemaat) return;
     if (confirm(`Apakah Anda yakin ingin menghapus data jemaat "${jemaat.full_name}"?`)) {
       const success = await deleteJemaat(jemaat.id);
@@ -75,14 +68,7 @@ export default function JemaatDetailPage() {
     }
   };
 
-  const handleAdminSuccess = () => {
-    if (pendingAction === 'edit') {
-      router.push(`/jemaat/${id}/edit`);
-    } else if (pendingAction === 'delete') {
-      executeDelete();
-    }
-    setPendingAction(null);
-  };
+  if (!isAuthenticated) return null;
 
   if (loading) {
     return (
@@ -348,12 +334,6 @@ export default function JemaatDetailPage() {
           <QRCard jemaat={jemaat} showDownloadBtn={true} />
         </div>
       </div>
-
-      <AdminLoginModal
-        isOpen={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
-        onSuccess={handleAdminSuccess}
-      />
     </div>
   );
 }
