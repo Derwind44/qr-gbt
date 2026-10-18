@@ -3,49 +3,240 @@
 @layer base {
   :root {
     --background: #FAF6F0;
+    --surface: #FFFDF9;
     --foreground: #2B180B;
     --gold-primary: #C5A059;
     --gold-bright: #D4AF37;
     --gold-dark: #9A7B38;
     --espresso-dark: #2B180B;
     --espresso-main: #3B2211;
+    --cream: #F3E5C8;
+    --sand: #EFE5DB;
+    --sand-dark: #E5D7C3;
+    --muted: #6B533E;
+    --muted-2: #8C6D4F;
+    --border: rgba(197, 160, 89, 0.35);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a,
+  label,
+  summary {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgba(197, 160, 89, 0.75);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
   }
 }
 
-body {
-  background: #FAF6F0;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(229, 215, 195, 0.4) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(197, 160, 89, 0.15) 0px, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(255, 253, 249, 0.8) 0px, transparent 100%);
-  color: #2B180B;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  min-height: 100vh;
-}
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    box-shadow: 0 1px 2px rgba(59, 34, 17, 0.04), 0 4px 16px rgba(59, 34, 17, 0.04);
+  }
 
-/* Luxury Glassmorphism Cards */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(197, 160, 89, 0.25);
-  box-shadow: 0 10px 30px -5px rgba(59, 34, 17, 0.05), 0 4px 12px rgba(197, 160, 89, 0.1);
-}
+  /* Buttons — min 48px tinggi supaya mudah disentuh */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0 1.25rem;
+    border-radius: 1rem;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    text-align: center;
+    user-select: none;
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.15s ease, opacity 0.15s ease;
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-sm {
+    min-height: 40px;
+    padding: 0 0.875rem;
+    font-size: 0.8125rem;
+    border-radius: 0.75rem;
+  }
+  .btn-lg {
+    min-height: 56px;
+    font-size: 1rem;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #3B2211 0%, #2B180B 50%, #1A0E06 100%);
+    color: var(--cream);
+    border: 1px solid rgba(197, 160, 89, 0.4);
+    box-shadow: 0 4px 12px rgba(59, 34, 17, 0.18);
+  }
+  .btn-gold {
+    background: linear-gradient(135deg, #D4AF37 0%, #C5A059 50%, #9A7B38 100%);
+    color: var(--espresso-dark);
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.25);
+  }
+  .btn-secondary {
+    background: var(--sand);
+    color: var(--espresso-main);
+    border: 1px solid rgba(197, 160, 89, 0.3);
+  }
+  .btn-secondary:hover {
+    background: var(--sand-dark);
+  }
+  .btn-danger {
+    background: rgba(244, 63, 94, 0.08);
+    color: #9f1239;
+    border: 1px solid rgba(225, 29, 72, 0.3);
+  }
+  .btn-danger:hover {
+    background: rgba(244, 63, 94, 0.14);
+  }
+  .btn-danger-solid {
+    background: #be123c;
+    color: #fff;
+  }
+  .btn-ghost {
+    color: var(--espresso-main);
+  }
+  .btn-ghost:hover {
+    background: rgba(239, 229, 219, 0.7);
+  }
 
-.glass-card {
-  background: rgba(255, 253, 249, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(197, 160, 89, 0.2);
-  box-shadow: 0 4px 15px rgba(59, 34, 17, 0.04);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
+  /* Form */
+  .label {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin-bottom: 0.375rem;
+  }
+  .hint {
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  .input {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    border-radius: 0.875rem;
+    background: var(--surface);
+    border: 1.5px solid rgba(197, 160, 89, 0.45);
+    color: var(--foreground);
+    /* 16px mencegah auto-zoom di iPhone saat input disentuh */
+    font-size: 16px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .input::placeholder {
+    color: var(--muted-2);
+    opacity: 0.85;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--espresso-main);
+    box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.3);
+  }
+  .input[aria-invalid='true'] {
+    border-color: #e11d48;
+    box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.12);
+  }
+  textarea.input {
+    resize: vertical;
+  }
 
-.glass-card:hover {
-  background: #FFFFFF;
-  border-color: rgba(197, 160, 89, 0.5);
-  box-shadow: 0 12px 30px rgba(197, 160, 89, 0.2);
-  transform: translateY(-3px);
+  /* Pilihan (radio / checkbox) berbentuk tombol besar */
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+  }
+  .choice-box {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 48px;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.875rem;
+    border: 1.5px solid rgba(197, 160, 89, 0.35);
+    background: var(--background);
+    color: var(--muted);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .choice-box:hover {
+    color: var(--foreground);
+    border-color: rgba(197, 160, 89, 0.7);
+  }
+  .choice-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    border: 1.5px solid rgba(140, 109, 79, 0.6);
+    color: transparent;
+  }
+  .choice-input[type='checkbox'] + .choice-box .choice-check {
+    border-radius: 0.375rem;
+  }
+  .choice-input:checked + .choice-box {
+    background: var(--espresso-main);
+    border-color: var(--gold-primary);
+    color: var(--cream);
+  }
+  .choice-input:checked + .choice-box .choice-check {
+    background: var(--gold-bright);
+    border-color: var(--gold-bright);
+    color: var(--espresso-dark);
+  }
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid rgba(197, 160, 89, 0.75);
+    outline-offset: 2px;
+  }
+
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, #EFE5DB 0%, #F6EFE6 50%, #EFE5DB 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: 0.75rem;
+  }
 }
 
 /* Metallic Wave Effects */
@@ -60,24 +251,80 @@ body {
 .text-gold-metallic {
   background: linear-gradient(135deg, #B8860B 0%, #D4AF37 50%, #9A7B38 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Scanner Animation */
-@keyframes scan-line {
-  0% {
-    top: 0%;
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animations (transform/opacity saja supaya ringan di HP) */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
   }
-  50% {
-    top: 90%;
+  to {
+    opacity: 1;
+    transform: none;
   }
-  100% {
-    top: 0%;
+}
+.animate-fadeIn {
+  animation: fade-in 0.2s ease-out both;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+.animate-sheet {
+  animation: sheet-up 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (min-width: 640px) {
+  .animate-sheet {
+    animation: fade-in 0.2s ease-out both;
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes scan-line {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(100%);
+  }
+}
 .animate-scan {
   animation: scan-line 2.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Print CSS for Card Download / Printable View */

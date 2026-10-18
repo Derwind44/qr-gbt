@@ -1,339 +1,287 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getJemaatByCodeOrId, deleteJemaat } from '@/lib/supabase';
 import { Jemaat } from '@/lib/types';
-import QRCard from '@/components/QRCard';
+import { useAdminGuard } from '@/lib/auth';
+import { setFlash, takeFlash } from '@/lib/flash';
+import { formatDate, roleLabel, toWhatsAppNumber } from '@/lib/options';
 import { formatGoogleDriveUrl } from '@/lib/gdrive';
+import QRCard from '@/components/QRCard';
 import {
-  ArrowLeft,
-  User,
-  CheckCircle2,
-  Heart,
-  Church,
-  FileText,
-  Edit,
-  Trash2,
-} from 'lucide-react';
+  Avatar,
+  BackLink,
+  ConfirmDialog,
+  EmptyState,
+  Spinner,
+  StatusBadge,
+  Toast,
+  useToast,
+} from '@/components/ui';
+import { User, Heart, Church, FileText, Pencil, Trash2, Phone, MessageCircle, UserX, QrCode } from 'lucide-react';
+
+function InfoSection({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <section className="card p-5 sm:p-6">
+      <h2 className="flex items-center gap-2 text-base font-black text-[#2B180B] mb-4">
+        <span className="text-[#C5A059]">{icon}</span>
+        {title}
+      </h2>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">{children}</dl>
+    </section>
+  );
+}
+
+function InfoRow({ label, value, wide, mono }: { label: string; value?: ReactNode; wide?: boolean; mono?: boolean }) {
+  return (
+    <div className={wide ? 'sm:col-span-2' : ''}>
+      <dt className="text-[13px] font-semibold text-[#6B533E]">{label}</dt>
+      <dd className={`text-[15px] font-semibold text-[#2B180B] mt-0.5 break-words whitespace-pre-line ${mono ? 'font-mono' : ''}`}>
+        {value || <span className="text-[#8C6D4F] font-normal">—</span>}
+      </dd>
+    </div>
+  );
+}
+
+function Tags({ items, gold }: { items?: string[]; gold?: boolean }) {
+  if (!items?.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-1">
+      {items.map((t) => (
+        <span
+          key={t}
+          className={`px-2.5 py-1 rounded-lg text-sm font-bold ${gold ? 'bg-gold-metallic text-[#2B180B]' : 'bg-[#3B2211] text-[#F3E5C8]'}`}
+        >
+          {t}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export default function JemaatDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const isAdmin = useAdminGuard();
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [jemaat, setJemaat] = useState<Jemaat | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'data' | 'kartu'>('data');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { toast, show } = useToast();
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const auth = sessionStorage.getItem('admin_authenticated');
-      if (auth !== 'true') {
-        router.replace('/login');
-        return;
-      }
-      setIsAuthenticated(true);
-    }
+    const flash = takeFlash();
+    if (flash) show(flash);
+    if (!id) return;
+    getJemaatByCodeOrId(id)
+      .then(setJemaat)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id, show]);
 
-    async function loadDetail() {
-      if (!id) return;
-      try {
-        const data = await getJemaatByCodeOrId(id);
-        setJemaat(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadDetail();
-  }, [id, router]);
-
-  const handleEditClick = () => {
-    router.push(`/jemaat/${id}/edit`);
+  const goBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.push('/jemaat');
   };
 
-  const handleDeleteClick = async () => {
+  const handleDelete = async () => {
     if (!jemaat) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus data jemaat "${jemaat.full_name}"?`)) {
-      const success = await deleteJemaat(jemaat.id);
-      if (success) {
-        alert('Data jemaat berhasil dihapus.');
-        router.push('/jemaat');
-      } else {
-        alert('Gagal menghapus data.');
-      }
+    setDeleting(true);
+    const success = await deleteJemaat(jemaat.id);
+    setDeleting(false);
+    if (success) {
+      setFlash(`Data ${jemaat.full_name} sudah dihapus.`);
+      router.push('/jemaat');
+    } else {
+      setConfirmOpen(false);
+      show('Gagal menghapus data. Coba lagi.', 'error');
     }
   };
 
-  if (!isAuthenticated) return null;
-
-  if (loading) {
-    return (
-      <div className="py-20 text-center space-y-3">
-        <div className="w-10 h-10 border-4 border-[#C5A059] border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs text-[#8C6D4F]">Memuat rincian data jemaat...</p>
-      </div>
-    );
-  }
+  if (!isAdmin) return null;
+  if (loading) return <Spinner label="Memuat data jemaat…" />;
 
   if (!jemaat) {
     return (
-      <div className="max-w-md mx-auto py-16 text-center space-y-4">
-        <h2 className="text-xl font-bold text-[#2B180B]">Data Tidak Ditemukan</h2>
-        <p className="text-xs text-[#6B533E]">
-          Data jemaat dengan ID <code className="text-[#3B2211] font-mono font-bold">{id}</code> tidak ditemukan.
-        </p>
-        <Link
-          href="/jemaat"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#3B2211] text-[#F3E5C8] text-xs font-bold hover:opacity-90 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Daftar Jemaat</span>
-        </Link>
+      <div className="max-w-md mx-auto pt-8">
+        <EmptyState
+          icon={<UserX className="w-7 h-7" />}
+          title="Data tidak ditemukan"
+          text={`Jemaat dengan ID ${id} tidak ada atau sudah dihapus.`}
+          action={
+            <Link href="/jemaat" className="btn btn-primary">
+              Kembali ke Daftar Jemaat
+            </Link>
+          }
+        />
       </div>
     );
   }
 
-  const displayId = jemaat.id_jemaat || jemaat.id;
+  const waNumber = toWhatsAppNumber(jemaat.phone);
+  const birth = [jemaat.birth_place, jemaat.birth_date ? formatDate(jemaat.birth_date) : ''].filter(Boolean).join(', ');
 
   return (
-    <div className="space-y-6 py-4">
-      {/* Top Header & Admin Actions */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-2 text-xs font-bold text-[#6B533E] hover:text-[#2B180B] transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 text-[#C5A059]" />
-          <span>Kembali ke Daftar</span>
-        </button>
+    <div className="max-w-6xl mx-auto space-y-4">
+      <BackLink label="Kembali" onClick={goBack} />
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleEditClick}
-            className="px-4 py-2 rounded-xl bg-espresso-metallic text-[#F3E5C8] border border-[#C5A059]/40 text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all hover:scale-105"
-          >
-            <Edit className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>Edit Data</span>
-          </button>
+      {/* Profil singkat */}
+      <div className="card p-5 sm:p-6">
+        <div className="flex items-start gap-4">
+          <Avatar name={jemaat.full_name} src={jemaat.profile_photo_url} size="lg" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <h1 className="text-xl sm:text-2xl font-black text-[#2B180B] tracking-tight leading-tight break-words">{jemaat.full_name}</h1>
+            <p className="text-sm font-mono font-bold text-[#6B533E]">{jemaat.id_jemaat || jemaat.id}</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="px-2.5 py-0.5 rounded-full bg-[#3B2211] text-[#F3E5C8] text-xs font-bold">{roleLabel(jemaat)}</span>
+              <StatusBadge status={jemaat.status} />
+            </div>
+          </div>
+        </div>
 
-          <button
-            onClick={handleDeleteClick}
-            className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Hapus Data</span>
-          </button>
+        <div className="grid grid-cols-3 gap-2 mt-5">
+          {waNumber ? (
+            <a href={`https://wa.me/${waNumber}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm flex-col h-16 gap-1 text-emerald-800">
+              <MessageCircle className="w-5 h-5" />
+              WhatsApp
+            </a>
+          ) : (
+            <span className="btn btn-secondary btn-sm flex-col h-16 gap-1 opacity-50 cursor-not-allowed">
+              <MessageCircle className="w-5 h-5" />
+              WhatsApp
+            </span>
+          )}
+          {jemaat.phone ? (
+            <a href={`tel:${jemaat.phone.replace(/[^\d+]/g, '')}`} className="btn btn-secondary btn-sm flex-col h-16 gap-1">
+              <Phone className="w-5 h-5" />
+              Telepon
+            </a>
+          ) : (
+            <span className="btn btn-secondary btn-sm flex-col h-16 gap-1 opacity-50 cursor-not-allowed">
+              <Phone className="w-5 h-5" />
+              Telepon
+            </span>
+          )}
+          <Link href={`/jemaat/${id}/edit`} className="btn btn-primary btn-sm flex-col h-16 gap-1">
+            <Pencil className="w-5 h-5 text-[#D4AF37]" />
+            Ubah Data
+          </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Complete Profile Information */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Header Card */}
-          <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-[#C5A059]/40 space-y-6 shadow-xl bg-[#FFFDF9]">
-            <div className="flex items-start gap-4">
-              {jemaat.profile_photo_url ? (
-                <img
-                  src={jemaat.profile_photo_url}
-                  alt={jemaat.full_name}
-                  className="w-20 h-20 rounded-2xl object-cover border-2 border-[#C5A059]/40 shadow-md shrink-0"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-2xl bg-espresso-metallic border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37] font-serif font-extrabold text-2xl shrink-0 shadow-md">
-                  {jemaat.full_name.charAt(0)}
-                </div>
-              )}
+      {/* Tab (HP saja) */}
+      <div className="lg:hidden grid grid-cols-2 p-1 rounded-2xl bg-[#EFE5DB] border border-[#C5A059]/30" role="tablist">
+        {[
+          { key: 'data' as const, label: 'Data Jemaat', icon: User },
+          { key: 'kartu' as const, label: 'Kartu QR', icon: QrCode },
+        ].map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold transition-colors ${
+              tab === key ? 'bg-[#3B2211] text-[#F3E5C8] shadow' : 'text-[#6B533E]'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
 
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-[#3B2211] text-[#F3E5C8] border border-[#C5A059]/40">
-                    {jemaat.church_role || jemaat.category || 'Anggota'}
-                  </span>
-                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
-                    jemaat.status === 'Nonaktif'
-                      ? 'bg-amber-500/10 text-amber-800 border-amber-600/30'
-                      : jemaat.status === 'Meninggal'
-                      ? 'bg-rose-900/15 text-rose-950 border-rose-900/40 font-black'
-                      : 'bg-emerald-500/10 text-emerald-800 border-emerald-600/30'
-                  }`}>
-                    <CheckCircle2 className={`w-3 h-3 ${
-                      jemaat.status === 'Nonaktif'
-                        ? 'text-amber-600'
-                        : jemaat.status === 'Meninggal'
-                        ? 'text-rose-900'
-                        : 'text-emerald-600'
-                    }`} />
-                    {jemaat.status || 'Aktif'}
-                  </span>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className={`lg:col-span-7 space-y-4 ${tab === 'data' ? '' : 'hidden lg:block'}`}>
+          <InfoSection icon={<User className="w-5 h-5" />} title="Data Diri">
+            <InfoRow label="Jenis Kelamin" value={jemaat.gender} />
+            <InfoRow label="Tempat, Tanggal Lahir" value={birth} />
+            <InfoRow label="Nomor HP / WA" value={jemaat.phone} />
+            <InfoRow label="Email" value={jemaat.email} />
+            <InfoRow label="NIK (KTP)" value={jemaat.nik} mono />
+            <InfoRow label="Tahun Bergabung" value={jemaat.join_year} />
+            <InfoRow label="Alamat" value={jemaat.address} wide />
+          </InfoSection>
 
-                <h1 className="text-2xl sm:text-3xl font-black text-[#2B180B] tracking-tight">
-                  {jemaat.full_name}
-                </h1>
-                <p className="text-xs font-mono text-[#3B2211] font-bold">
-                  ID Jemaat: {displayId}
-                </p>
-              </div>
-            </div>
+          <InfoSection icon={<Heart className="w-5 h-5" />} title="Data Keluarga">
+            <InfoRow label="Nama Ayah" value={jemaat.father_name} />
+            <InfoRow label="Nama Ibu" value={jemaat.mother_name} />
+            <InfoRow label="Status Pernikahan" value={jemaat.marital_status} />
+            <InfoRow label="Nama Pasangan" value={jemaat.spouse_name} />
+            <InfoRow label="Jumlah Anak" value={jemaat.children_count} />
+            {jemaat.children_detail && <InfoRow label="Nama & Tanggal Lahir Anak" value={jemaat.children_detail} wide />}
+          </InfoSection>
 
-            {/* SECTION 1: DATA DIRI */}
-            <div className="space-y-3 pt-4 border-t border-[#C5A059]/25">
-              <h3 className="font-bold text-[#2B180B] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#C5A059]" /> Data Diri
-              </h3>
+          <InfoSection icon={<Church className="w-5 h-5" />} title="Gereja & Pelayanan">
+            <InfoRow label="Peran di Gereja" value={roleLabel(jemaat)} />
+            <InfoRow label="Status Keanggotaan" value={jemaat.status || 'Aktif'} />
+            <InfoRow
+              label="Potensi / Keahlian"
+              value={
+                jemaat.potentials?.length ? (
+                  <>
+                    <Tags items={jemaat.potentials} />
+                    {jemaat.other_potential_desc && <span className="block mt-1.5 text-sm">{jemaat.other_potential_desc}</span>}
+                  </>
+                ) : undefined
+              }
+              wide
+            />
+            <InfoRow label="Divisi yang Diikuti" value={jemaat.joined_divisions?.length ? <Tags items={jemaat.joined_divisions} gold /> : undefined} wide />
+          </InfoSection>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">NIK (KTP)</span>
-                  <p className="font-semibold text-[#2B180B] font-mono">{jemaat.nik || '-'}</p>
-                </div>
-
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Jenis Kelamin</span>
-                  <p className="font-semibold text-[#2B180B]">{jemaat.gender || '-'}</p>
-                </div>
-
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Tempat, Tanggal Lahir</span>
-                  <p className="font-semibold text-[#2B180B]">
-                    {jemaat.birth_place || '-'}, {jemaat.birth_date ? new Date(jemaat.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
-                  </p>
-                </div>
-
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Nomor HP / WA</span>
-                  <p className="font-semibold text-[#2B180B]">{jemaat.phone || '-'}</p>
-                </div>
-
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Email</span>
-                  <p className="font-semibold text-[#2B180B]">{jemaat.email || '-'}</p>
-                </div>
-
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Tahun Bergabung</span>
-                  <p className="font-semibold text-[#2B180B]">{jemaat.join_year || '-'}</p>
-                </div>
-
-                {jemaat.address && (
-                  <div className="sm:col-span-2 glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                    <span className="text-[10px] text-[#6B533E]">Alamat Domisili</span>
-                    <p className="font-semibold text-[#2B180B]">{jemaat.address}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* SECTION 2: DATA KELUARGA */}
-            <div className="space-y-3 pt-4 border-t border-[#C5A059]/25">
-              <h3 className="font-bold text-[#2B180B] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Heart className="w-3.5 h-3.5 text-rose-600" /> Data Keluarga (Relasi Orang Tua & Pasangan)
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Nama Ayah Kandung</span>
-                  <p className="font-semibold text-[#2B180B]">{jemaat.father_name || '-'}</p>
-                </div>
-
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Nama Ibu Kandung</span>
-                  <p className="font-semibold text-[#2B180B]">{jemaat.mother_name || '-'}</p>
-                </div>
-
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Status Pernikahan</span>
-                  <p className="font-semibold text-[#2B180B]">{jemaat.marital_status || '-'}</p>
-                </div>
-
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Nama Pasangan</span>
-                  <p className="font-semibold text-[#2B180B]">{jemaat.spouse_name || '-'}</p>
-                </div>
-
-                {jemaat.children_detail && (
-                  <div className="sm:col-span-2 glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                    <span className="text-[10px] text-[#6B533E]">Detail Anak & Tanggal Lahir</span>
-                    <p className="font-semibold text-[#2B180B] whitespace-pre-line">{jemaat.children_detail}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* SECTION 3: GEREJA & PELAYANAN */}
-            <div className="space-y-3 pt-4 border-t border-[#C5A059]/25">
-              <h3 className="font-bold text-[#2B180B] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Church className="w-3.5 h-3.5 text-[#C5A059]" /> Jabatan Gereja, Potensi & Divisi
-              </h3>
-
-              <div className="space-y-3 text-xs">
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-0.5">
-                  <span className="text-[10px] text-[#6B533E]">Jabatan Dalam Gereja</span>
-                  <p className="font-semibold text-[#2B180B]">{jemaat.church_role || 'Anggota'}</p>
-                </div>
-
-                <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-1">
-                  <span className="text-[10px] text-[#6B533E]">Potensi Yang Dimiliki</span>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {jemaat.potentials && jemaat.potentials.length > 0 ? (
-                      jemaat.potentials.map((p) => (
-                        <span key={p} className="px-2.5 py-0.5 rounded-lg bg-[#3B2211] text-[#F3E5C8] text-[11px] font-bold border border-[#C5A059]/40">
-                          {p}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-[#8C6D4F]">-</span>
-                    )}
-                  </div>
-                </div>
-
-                {jemaat.joined_divisions && jemaat.joined_divisions.length > 0 && (
-                  <div className="glass-card p-3 rounded-xl border border-[#C5A059]/25 space-y-1">
-                    <span className="text-[10px] text-[#6B533E]">Divisi yang Diikuti di GBT</span>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {jemaat.joined_divisions.map((d) => (
-                        <span key={d} className="px-2.5 py-0.5 rounded-lg bg-gold-metallic text-[#2B180B] text-[11px] font-bold border border-[#C5A059]/40">
-                          {d}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Foto KTP Preview if exists */}
-            {jemaat.ktp_photo_url && (
-              <div className="space-y-2 pt-4 border-t border-[#C5A059]/25">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#2B180B] flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-[#C5A059]" /> Lampiran Foto KTP
-                </span>
+          {jemaat.ktp_photo_url && (
+            <section className="card p-5 sm:p-6">
+              <h2 className="flex items-center gap-2 text-base font-black text-[#2B180B] mb-3">
+                <FileText className="w-5 h-5 text-[#C5A059]" />
+                Foto KTP
+              </h2>
+              <a href={formatGoogleDriveUrl(jemaat.ktp_photo_url)} target="_blank" rel="noopener noreferrer" className="block">
                 <img
                   src={formatGoogleDriveUrl(jemaat.ktp_photo_url)}
-                  alt="KTP Jemaat"
-                  className="w-full max-h-48 rounded-2xl object-cover border border-[#C5A059]/30 shadow-md"
+                  alt="Foto KTP"
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full max-w-sm rounded-2xl object-cover border border-[#C5A059]/30"
                 />
-              </div>
-            )}
-          </div>
+                <span className="block mt-2 text-sm font-semibold text-[#6B533E]">Ketuk foto untuk memperbesar</span>
+              </a>
+            </section>
+          )}
+
+          <button type="button" onClick={() => setConfirmOpen(true)} className="btn btn-danger w-full">
+            <Trash2 className="w-5 h-5" />
+            Hapus Data Jemaat
+          </button>
         </div>
 
-        {/* Right Column: QR Digital ID Card Component & Download Button */}
-        <div className="lg:col-span-5 flex flex-col items-center">
-          <div className="w-full space-y-2 mb-3 text-center lg:text-left">
-            <h3 className="text-lg font-bold text-[#2B180B]">Kartu Akses QR Digital</h3>
-            <p className="text-xs text-[#6B533E]">
-              Kartu resmi GBT Bethlehem Surabaya versi Depan & Belakang.
-            </p>
+        <div className={`lg:col-span-5 lg:sticky lg:top-24 ${tab === 'kartu' ? '' : 'hidden lg:block'}`}>
+          <div className="card p-5 sm:p-6">
+            <h2 className="text-base font-black text-[#2B180B]">Kartu QR Jemaat</h2>
+            <p className="text-sm text-[#6B533E] mb-4">Unduh lalu kirim ke jemaat atau cetak.</p>
+            <QRCard jemaat={jemaat} />
           </div>
-
-          <QRCard jemaat={jemaat} showDownloadBtn={true} />
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Hapus data jemaat?"
+        message={
+          <>
+            Data <strong>{jemaat.full_name}</strong> akan dihapus permanen dan kartu QR-nya tidak bisa dipakai lagi.
+          </>
+        }
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
+      <Toast toast={toast} />
     </div>
   );
 }

@@ -3,8 +3,7 @@
 import { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Jemaat } from '@/lib/types';
-import { Download, RotateCw } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import { Download, RotateCw, Loader2 } from 'lucide-react';
 import { formatGoogleDriveUrl } from '@/lib/gdrive';
 
 interface QRCardProps {
@@ -34,6 +33,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
   const cardRef = useRef<HTMLDivElement>(null);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
 
   const displayId = jemaat.id_jemaat || jemaat.id;
   const qrValue = jemaat.qr_token || jemaat.id_jemaat || jemaat.id;
@@ -61,7 +61,9 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
     if (!cardRef.current || isDownloading) return;
     try {
       setIsDownloading(true);
+      setDownloadError('');
 
+      const { toPng } = await import('html-to-image');
       const targetEl = cardRef.current;
       const dataUrl = await toPng(targetEl, {
         quality: 1.0,
@@ -76,7 +78,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
       link.click();
     } catch (err) {
       console.error('html-to-image error:', err);
-      alert('Gagal mengunduh kartu. Silakan coba lagi.');
+      setDownloadError('Gagal mengunduh kartu. Periksa koneksi lalu coba lagi.');
     } finally {
       setIsDownloading(false);
     }
@@ -84,30 +86,22 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      {/* Side Switcher Pills & Flip Button */}
-      <div className="flex items-center gap-2 bg-[#EFE5DB] p-1 rounded-2xl border border-[#C5A059]/30">
-        <button
-          type="button"
-          onClick={() => setActiveSide('front')}
-          className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-            activeSide === 'front'
-              ? 'bg-[#3B2211] text-[#F3E5C8] shadow-md shadow-[#3B2211]/30'
-              : 'text-[#6B533E] hover:text-[#2B180B]'
-          }`}
-        >
-          Depan (Front Card)
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSide('back')}
-          className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-            activeSide === 'back'
-              ? 'bg-[#3B2211] text-[#F3E5C8] shadow-md shadow-[#3B2211]/30'
-              : 'text-[#6B533E] hover:text-[#2B180B]'
-          }`}
-        >
-          Belakang (Back - QR)
-        </button>
+      {/* Side Switcher */}
+      <div className="grid grid-cols-2 w-full max-w-[340px] p-1 rounded-2xl bg-[#EFE5DB] border border-[#C5A059]/30" role="tablist" aria-label="Sisi kartu">
+        {(['front', 'back'] as const).map((side) => (
+          <button
+            key={side}
+            type="button"
+            role="tab"
+            aria-selected={activeSide === side}
+            onClick={() => setActiveSide(side)}
+            className={`h-11 rounded-xl text-sm font-bold transition-colors ${
+              activeSide === side ? 'bg-[#3B2211] text-[#F3E5C8] shadow' : 'text-[#6B533E] hover:text-[#2B180B]'
+            }`}
+          >
+            {side === 'front' ? 'Depan' : 'Belakang (QR)'}
+          </button>
+        ))}
       </div>
 
       {/* 3D Flip Card Outer Container */}
@@ -146,7 +140,8 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
             {/* LAYER 2: ID Card Template Image */}
             <img
               src="/notext_front_idcard.png"
-              alt="Front Template"
+              alt=""
+              decoding="async"
               className="absolute inset-0 w-full h-full object-fill z-10 pointer-events-none"
             />
 
@@ -184,7 +179,8 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
             {/* LAYER 1: Back Card Template Image */}
             <img
               src="/notext_back_idcard.png"
-              alt="Back Template"
+              alt=""
+              decoding="async"
               className="absolute inset-0 w-full h-full object-fill z-10 pointer-events-none"
             />
 
@@ -215,31 +211,28 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
 
       {/* Action Buttons */}
       {showDownloadBtn && (
-        <div className="flex items-center gap-3 w-full max-w-[340px]">
-          <button
-            type="button"
-            onClick={handleDownloadCard}
-            disabled={isDownloading}
-            className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-espresso-metallic text-[#F3E5C8] font-bold text-xs shadow-lg shadow-[#3B2211]/20 transition-all hover:scale-[1.02] active:scale-[0.98] border border-[#C5A059]/40 disabled:opacity-50"
-          >
-            <Download className="w-4 h-4 text-[#D4AF37]" />
-            <span>
-              {isDownloading
-                ? 'Memproses PNG...'
-                : activeSide === 'front'
-                ? 'Unduh Kartu Depan (PNG)'
-                : 'Unduh QR Belakang (PNG)'}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
-            title="Putar Kartu (Flip Card)"
-            className="p-3 rounded-2xl bg-[#EFE5DB] hover:bg-[#E5D7C3] text-[#3B2211] border border-[#C5A059]/40 transition-all hover:rotate-180 duration-500 shadow-md"
-          >
-            <RotateCw className="w-4 h-4 text-[#3B2211]" />
-          </button>
+        <div className="w-full max-w-[340px] space-y-2">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDownloadCard}
+              disabled={isDownloading}
+              className="btn btn-primary flex-1"
+            >
+              {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5 text-[#D4AF37]" />}
+              {isDownloading ? 'Menyiapkan gambar…' : activeSide === 'front' ? 'Unduh Kartu Depan' : 'Unduh Kartu Belakang'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
+              aria-label="Balik kartu"
+              title="Balik kartu"
+              className="btn btn-secondary w-12 px-0"
+            >
+              <RotateCw className="w-5 h-5" />
+            </button>
+          </div>
+          {downloadError && <p className="text-sm font-semibold text-rose-700 text-center" role="alert">{downloadError}</p>}
         </div>
       )}
     </div>

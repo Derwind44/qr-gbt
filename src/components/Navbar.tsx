@@ -1,146 +1,120 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { QrCode, Users, Home, UserPlus, ShieldCheck, LogOut, LayoutDashboard, ClipboardList } from 'lucide-react';
+import { QrCode, Users, LogOut, LayoutDashboard, ClipboardList, LogIn } from 'lucide-react';
+import { clearAdminSession, useIsAdmin } from '@/lib/auth';
+
+const NAV_ITEMS = [
+  { href: '/admin', label: 'Beranda', icon: LayoutDashboard, match: (p: string) => p === '/admin' },
+  { href: '/admin/presensi', label: 'Presensi', icon: ClipboardList, match: (p: string) => p.startsWith('/admin/presensi') },
+  { href: '/scan', label: 'Scan QR', icon: QrCode, match: (p: string) => p === '/scan' },
+  { href: '/jemaat', label: 'Jemaat', icon: Users, match: (p: string) => p.startsWith('/jemaat') },
+];
+
+// Pages with their own sticky action bar hide the bottom navigation
+const isFormPage = (p: string) => p === '/jemaat/tambah' || p.endsWith('/edit');
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const isAdmin = useIsAdmin();
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const auth = sessionStorage.getItem('admin_authenticated');
-      setIsAdmin(auth === 'true');
-    }
-  }, [pathname]);
-
-  // Hide header and bottom navigation completely on public scanner and login page
-  if (pathname === '/scan' || pathname === '/login') {
+  if (pathname === '/login' || (pathname === '/scan' && !isAdmin)) {
     return null;
   }
 
   const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('admin_authenticated');
-      sessionStorage.removeItem('admin_login_time');
-    }
-    setIsAdmin(false);
+    clearAdminSession();
     router.push('/login');
   };
 
-  const navItems = [
-    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/presensi', label: 'Presensi', icon: ClipboardList },
-    { href: '/jemaat', label: 'Daftar Jemaat', icon: Users },
-  ];
-
   return (
     <>
-      {/* Top Header Navbar */}
-      <header className="sticky top-0 z-40 w-full glass-panel border-b border-[#C5A059]/30 bg-[#FFFDF9]/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Brand Logo */}
-          <Link href={isAdmin ? '/admin' : '/login'} className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-full bg-espresso-metallic border border-[#C5A059] flex items-center justify-center shadow-md shadow-[#3B2211]/20 group-hover:scale-105 transition-transform overflow-hidden shrink-0">
-              <img
-                src="/logo.png"
-                alt="GBT Bethlehem Surabaya Logo"
-                className="w-full h-full object-cover rounded-full"
-              />
-            </div>
-            <div>
-              <div className="flex items-baseline gap-1">
-                <span className="font-black text-base sm:text-lg text-[#2B180B] tracking-tight">
-                  bethlehem <span className="text-[#C5A059] font-black text-lg">.</span>
-                </span>
-              </div>
-              <p className="text-[8px] sm:text-[9px] tracking-[0.2em] text-[#6B533E] uppercase font-bold -mt-1">
-                surabaya church
-              </p>
-            </div>
+      <header className="sticky top-0 z-40 w-full bg-[#FFFDF9]/95 border-b border-[#C5A059]/30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 md:h-16 flex items-center justify-between gap-3">
+          <Link href={isAdmin ? '/admin' : '/login'} className="flex items-center gap-2.5 min-w-0">
+            <span className="w-9 h-9 rounded-full bg-espresso-metallic border border-[#C5A059] overflow-hidden shrink-0">
+              <img src="/logo.png" alt="" width={36} height={36} className="w-full h-full object-cover" />
+            </span>
+            <span className="leading-none">
+              <span className="block font-black text-lg text-[#2B180B] tracking-tight">
+                bethlehem<span className="text-[#C5A059]">.</span>
+              </span>
+              <span className="block text-[9px] tracking-[0.2em] text-[#6B533E] uppercase font-bold mt-0.5">surabaya church</span>
+            </span>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <div className="flex items-center gap-2">
-            <nav className="hidden md:flex items-center gap-1 sm:gap-2">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                      isActive
-                        ? 'bg-espresso-metallic text-[#F3E5C8] shadow-md shadow-[#3B2211]/20 border border-[#C5A059]/40'
-                        : 'text-[#523A27] hover:text-[#2B180B] hover:bg-[#F3E5C8]/40'
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#D4AF37]' : 'text-[#8C6D4F]'}`} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+          <div className="flex items-center gap-1.5">
+            {isAdmin && (
+              <nav className="hidden md:flex items-center gap-1 mr-2" aria-label="Menu utama">
+                {NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const active = item.match(pathname);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex items-center gap-2 px-3.5 h-10 rounded-xl text-sm font-bold transition-colors ${
+                        active ? 'bg-espresso-metallic text-[#F3E5C8]' : 'text-[#523A27] hover:bg-[#F3E5C8]/50'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${active ? 'text-[#D4AF37]' : 'text-[#8C6D4F]'}`} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
 
-            {/* Public Scan Button */}
-            <Link
-              href="/scan"
-              className="px-3 py-1.5 rounded-xl bg-gold-metallic text-[#2B180B] text-xs font-bold shadow-xs hover:scale-105 transition-transform flex items-center gap-1"
-            >
-              <QrCode className="w-3.5 h-3.5 text-[#2B180B]" />
-              <span className="hidden sm:inline">Scan QR</span>
-            </Link>
-
-            {/* Admin status indicator / Logout */}
             {isAdmin ? (
-              <button
-                onClick={handleLogout}
-                title="Keluar Admin"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/10 border border-rose-600/30 text-rose-800 hover:bg-rose-500/20 transition-all"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Logout</span>
+              <button type="button" onClick={handleLogout} className="btn btn-ghost btn-sm px-3 text-[#6B533E]">
+                <LogOut className="w-4 h-4" />
+                <span>Keluar</span>
               </button>
             ) : (
-              <Link
-                href="/login"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#F5EFEB] border border-[#C5A059]/30 text-[#3B2211] hover:bg-[#EFE5DB] transition-all"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-[#C5A059]" />
-                <span>Login</span>
+              <Link href="/login" className="btn btn-secondary btn-sm">
+                <LogIn className="w-4 h-4" />
+                <span>Masuk</span>
               </Link>
             )}
           </div>
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFFDF9]/95 backdrop-blur-lg border-t border-[#C5A059]/30 shadow-2xl px-2 py-1.5 flex items-center justify-around">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
-                isActive
-                  ? 'text-[#3B2211] font-black scale-105'
-                  : 'text-[#8C6D4F] hover:text-[#2B180B]'
-              }`}
-            >
-              <div className={`p-1 rounded-lg ${isActive ? 'bg-[#3B2211] text-[#F3E5C8]' : ''}`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] tracking-tight mt-0.5">{item.label}</span>
-            </Link>
-          );
-        })}
-      </div>
+      {isAdmin && !isFormPage(pathname) && (
+        <nav
+          aria-label="Menu utama"
+          className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FFFDF9] border-t border-[#C5A059]/30 shadow-[0_-4px_16px_rgba(59,34,17,0.06)] pb-[env(safe-area-inset-bottom)]"
+        >
+          <div className="grid grid-cols-4">
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const active = item.match(pathname);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex flex-col items-center justify-center gap-1 h-16 text-xs font-bold transition-colors ${
+                    active ? 'text-[#2B180B]' : 'text-[#8C6D4F]'
+                  }`}
+                >
+                  <span
+                    className={`flex items-center justify-center w-14 h-8 rounded-full transition-colors ${
+                      active ? 'bg-[#3B2211] text-[#D4AF37]' : ''
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </span>
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
     </>
   );
 }

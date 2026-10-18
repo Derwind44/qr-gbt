@@ -1,165 +1,142 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { QrCode, Users, UserPlus, ArrowRight, CheckCircle2, ShieldCheck, LogOut, Database } from 'lucide-react';
+import { QrCode, Users, UserPlus, ChevronRight, ClipboardList } from 'lucide-react';
 import { getAllJemaat } from '@/lib/supabase';
 import { Jemaat } from '@/lib/types';
+import { useAdminGuard } from '@/lib/auth';
+import { roleLabel } from '@/lib/options';
+import { Avatar, StatusBadge } from '@/components/ui';
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 11) return 'Selamat pagi';
+  if (h < 15) return 'Selamat siang';
+  if (h < 18) return 'Selamat sore';
+  return 'Selamat malam';
+}
+
+const SHORTCUTS = [
+  { href: '/scan', label: 'Scan Kartu QR', desc: 'Cek data jemaat', icon: QrCode, tone: 'bg-gold-metallic text-[#2B180B]' },
+  { href: '/jemaat/tambah', label: 'Tambah Jemaat', desc: 'Daftarkan baru', icon: UserPlus, tone: 'bg-espresso-metallic text-[#D4AF37]' },
+  { href: '/jemaat', label: 'Daftar Jemaat', desc: 'Cari & kartu QR', icon: Users, tone: 'bg-[#EFE5DB] text-[#3B2211]' },
+];
 
 export default function AdminDashboardPage() {
-  const router = useRouter();
+  const isAdmin = useAdminGuard();
   const [jemaatList, setJemaatList] = useState<Jemaat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const auth = sessionStorage.getItem('admin_authenticated');
-      if (auth !== 'true') {
-        router.replace('/login');
-        return;
-      }
-      setIsAdmin(true);
-    }
+    getAllJemaat()
+      .then(setJemaatList)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
-    async function loadData() {
-      try {
-        const data = await getAllJemaat();
-        setJemaatList(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, [router]);
+  const stats = useMemo(
+    () => [
+      { label: 'Total Jemaat', value: jemaatList.length },
+      { label: 'Aktif', value: jemaatList.filter((j) => !j.status || j.status === 'Aktif').length },
+      { label: 'Pelayan', value: jemaatList.filter((j) => roleLabel(j) === 'Pelayan').length },
+    ],
+    [jemaatList]
+  );
 
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('admin_authenticated');
-      sessionStorage.removeItem('admin_login_time');
-    }
-    router.push('/login');
-  };
+  if (!isAdmin) return null;
 
-  if (!isAdmin) {
-    return null;
-  }
+  const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="space-y-6 py-4 max-w-5xl mx-auto">
-      {/* Admin Dashboard Header */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-[#C5A059]/40 bg-[#FFFDF9] shadow-xl space-y-2">
-        <h1 className="text-2xl sm:text-4xl font-black text-[#2B180B] tracking-tight">
-          Dashboard Admin
-        </h1>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div>
+        <p className="text-sm font-semibold text-[#6B533E]">{today}</p>
+        <h1 className="text-2xl sm:text-3xl font-black text-[#2B180B] tracking-tight">{greeting()}, Admin 👋</h1>
       </div>
 
-      {/* Main Submenus (Scan QR & Daftar Jemaat CRUD) */}
-      <div className="space-y-3">
-        <h2 className="text-xs font-black tracking-widest text-[#3B2211] uppercase px-1">
-          SUBMENU MANAJEMEN ADMIN
-        </h2>
+      {/* Aksi utama */}
+      <Link
+        href="/admin/presensi"
+        className="flex items-center gap-4 p-5 rounded-3xl bg-espresso-metallic border border-[#C5A059]/50 shadow-lg shadow-[#3B2211]/20 active:scale-[0.98] transition-transform"
+      >
+        <span className="w-14 h-14 rounded-2xl bg-gold-metallic flex items-center justify-center shrink-0">
+          <ClipboardList className="w-7 h-7 text-[#2B180B]" />
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-lg font-black text-[#F3E5C8]">Mulai Presensi Ibadah</span>
+          <span className="block text-sm text-[#EAD6B0]">Catat kehadiran jemaat dengan scan kartu QR</span>
+        </span>
+        <ChevronRight className="w-6 h-6 text-[#D4AF37] shrink-0" />
+      </Link>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-6">
-          {/* Submenu 1: Pindai QR */}
+      {/* Pintasan */}
+      <div className="grid grid-cols-3 gap-3">
+        {SHORTCUTS.map(({ href, label, desc, icon: Icon, tone }) => (
           <Link
-            href="/scan"
-            className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-[#C5A059]/30 hover:border-[#3B2211] space-y-2.5 sm:space-y-4 group flex flex-col items-center sm:items-start text-center sm:text-left transition-all shadow-md bg-[#FFFDF9]"
+            key={href}
+            href={href}
+            className="card p-3 sm:p-4 flex flex-col items-center sm:items-start text-center sm:text-left gap-2.5 hover:border-[#C5A059] active:scale-[0.97] transition-transform"
           >
-            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-espresso-metallic border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37] shadow-lg group-hover:scale-105 transition-transform">
-              <QrCode className="w-5 h-5 sm:w-7 sm:h-7" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-xl font-black text-[#2B180B] group-hover:text-[#C5A059] transition-colors leading-tight">
-                Scan QR Code
-              </h3>
-            </div>
-            <div className="pt-1 sm:pt-2 text-[10px] sm:text-xs font-bold text-[#3B2211] flex items-center justify-center sm:justify-start gap-1 group-hover:translate-x-1 transition-transform">
-              <span>Mulai Pindai</span>
-              <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 text-[#C5A059]" />
-            </div>
+            <span className={`w-12 h-12 rounded-2xl flex items-center justify-center ${tone}`}>
+              <Icon className="w-6 h-6" />
+            </span>
+            <span>
+              <span className="block text-sm sm:text-base font-bold text-[#2B180B] leading-tight">{label}</span>
+              <span className="hidden sm:block text-sm text-[#6B533E]">{desc}</span>
+            </span>
           </Link>
-
-          {/* Submenu 2: Daftar Jemaat & CRUD */}
-          <Link
-            href="/jemaat"
-            className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-[#C5A059]/30 hover:border-[#3B2211] space-y-2.5 sm:space-y-4 group flex flex-col items-center sm:items-start text-center sm:text-left transition-all shadow-md bg-[#FFFDF9]"
-          >
-            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gold-metallic border border-[#C5A059] flex items-center justify-center text-[#2B180B] shadow-lg group-hover:scale-105 transition-transform">
-              <Users className="w-5 h-5 sm:w-7 sm:h-7" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-xl font-black text-[#2B180B] group-hover:text-[#C5A059] transition-colors leading-tight">
-                Daftar Jemaat
-              </h3>
-            </div>
-            <div className="pt-1 sm:pt-2 text-[10px] sm:text-xs font-bold text-[#3B2211] flex items-center justify-center sm:justify-start gap-1 group-hover:translate-x-1 transition-transform">
-              <span>Daftar ({loading ? '...' : jemaatList.length})</span>
-              <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 text-[#C5A059]" />
-            </div>
-          </Link>
-        </div>
+        ))}
       </div>
 
-      {/* Quick Summary Cards */}
-      <section className="glass-panel rounded-3xl p-6 border border-[#C5A059]/40 space-y-4 bg-[#FFFDF9]">
+      {/* Ringkasan */}
+      <section aria-label="Ringkasan" className="grid grid-cols-3 gap-3">
+        {stats.map((s) => (
+          <div key={s.label} className="card p-4 text-center">
+            {loading ? (
+              <div className="skeleton h-8 w-12 mx-auto" />
+            ) : (
+              <p className="text-2xl sm:text-3xl font-black text-[#2B180B]">{s.value}</p>
+            )}
+            <p className="text-xs sm:text-sm font-semibold text-[#6B533E] mt-1">{s.label}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* Jemaat terbaru */}
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-[#C5A059]" />
-            <h3 className="text-base font-bold text-[#2B180B]">Jemaat Terbaru Didaftarkan</h3>
-          </div>
-          <Link href="/jemaat" className="text-xs text-[#3B2211] font-bold hover:text-[#C5A059] flex items-center gap-1">
-            <span>Kelola Semua ({jemaatList.length})</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+          <h2 className="section-title">Baru Didaftarkan</h2>
+          <Link href="/jemaat" className="inline-flex items-center gap-0.5 min-h-[40px] text-sm font-bold text-[#3B2211]">
+            Lihat semua <ChevronRight className="w-4 h-4 text-[#C5A059]" />
           </Link>
         </div>
 
-        {loading ? (
-          <div className="py-6 text-center text-xs text-[#8C6D4F] animate-pulse">
-            Memuat data jemaat terbaru...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {jemaatList.slice(0, 4).map((j) => (
-              <Link
-                key={j.id}
-                href={`/jemaat/${j.id}`}
-                className="glass-card p-3.5 rounded-2xl border border-[#C5A059]/30 hover:border-[#3B2211] block group"
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#3B2211]/10 text-[#3B2211] border border-[#3B2211]/20">
-                    {j.id_jemaat || j.id}
-                  </span>
-                  <span className={`text-[10px] font-bold flex items-center gap-0.5 ${
-                    j.status === 'Nonaktif'
-                      ? 'text-amber-700'
-                      : j.status === 'Meninggal'
-                      ? 'text-rose-900 font-black'
-                      : 'text-emerald-700'
-                  }`}>
-                    <CheckCircle2 className={`w-3 h-3 ${
-                      j.status === 'Nonaktif'
-                        ? 'text-amber-600'
-                        : j.status === 'Meninggal'
-                        ? 'text-rose-800'
-                        : 'text-emerald-600'
-                    }`} />
-                    {j.status || 'Aktif'}
-                  </span>
+        <div className="card divide-y divide-[#C5A059]/20 overflow-hidden">
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3.5">
+                  <div className="skeleton w-10 h-10" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-4 w-2/3" />
+                    <div className="skeleton h-3 w-1/3" />
+                  </div>
                 </div>
-                <h4 className="font-bold text-xs text-[#2B180B] group-hover:text-[#C5A059] transition-colors truncate">
-                  {j.full_name}
-                </h4>
-                <p className="text-[11px] text-[#6B533E] truncate">
-                  {j.joined_divisions?.[0] || j.church_role || 'Jemaat'}
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
+              ))
+            : jemaatList.slice(0, 5).map((j) => (
+                <Link key={j.id} href={`/jemaat/${j.id}`} className="flex items-center gap-3 p-3.5 hover:bg-[#FAF6F0] active:bg-[#F3E5C8]/40">
+                  <Avatar name={j.full_name} src={j.profile_photo_url} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-[15px] text-[#2B180B] truncate">{j.full_name}</p>
+                    <p className="text-sm text-[#6B533E] truncate">{roleLabel(j)}</p>
+                  </div>
+                  <StatusBadge status={j.status} />
+                </Link>
+              ))}
+          {!loading && jemaatList.length === 0 && (
+            <p className="p-6 text-center text-sm text-[#6B533E]">Belum ada jemaat terdaftar.</p>
+          )}
+        </div>
       </section>
     </div>
   );
