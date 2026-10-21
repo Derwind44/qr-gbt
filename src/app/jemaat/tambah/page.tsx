@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { createJemaat } from '@/lib/supabase';
+import { createJemaat } from '@/lib/api';
 import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
 import QRCard from '@/components/QRCard';

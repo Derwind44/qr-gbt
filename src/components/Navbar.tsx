@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { QrCode, Users, LogOut, LayoutDashboard, ClipboardList, LogIn } from 'lucide-react';
-import { clearAdminSession, useIsAdmin } from '@/lib/auth';
+import { logoutAdmin, useIsAdmin } from '@/lib/auth';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Beranda', icon: LayoutDashboard, match: (p: string) => p === '/admin' },
@@ -24,8 +24,8 @@ export default function Navbar() {
     return null;
   }
 
-  const handleLogout = () => {
-    clearAdminSession();
+  const handleLogout = async () => {
+    await logoutAdmin();
     router.push('/login');
   };
 

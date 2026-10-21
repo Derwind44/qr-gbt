@@ -3,42 +3,63 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 
-const AUTH_KEY = 'admin_authenticated';
-const LOGIN_TIME_KEY = 'admin_login_time';
-const AUTH_EVENT = 'admin-auth-change';
+// UI hint only. Real access control lives in proxy.ts and every /api route (httpOnly session cookie).
+let isAdminState = false;
+let checked = false;
+let pending: Promise<boolean> | null = null;
+const listeners = new Set<() => void>();
 
-export function readIsAdmin(): boolean {
-  if (typeof window === 'undefined') return false;
+function setState(value: boolean) {
+  isAdminState = value;
+  checked = true;
+  listeners.forEach((l) => l());
+}
+
+export function refreshAdminSession(): Promise<boolean> {
+  pending ??= fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' })
+    .then((r) => (r.ok ? r.json() : { isAdmin: false }))
+    .then((d) => Boolean(d.isAdmin))
+    .catch(() => false)
+    .then((value) => {
+      pending = null;
+      setState(value);
+      return value;
+    });
+  return pending;
+}
+
+export async function loginAdmin(username: string, password: string): Promise<string | null> {
   try {
-    return sessionStorage.getItem(AUTH_KEY) === 'true';
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ username, password }),
+    });
+    if (res.ok) {
+      setState(true);
+      return null;
+    }
+    const data = await res.json().catch(() => null);
+    return data?.error || 'Gagal masuk. Coba lagi.';
   } catch {
-    return false;
+    return 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
   }
 }
 
-export function setAdminSession() {
-  sessionStorage.setItem(AUTH_KEY, 'true');
-  sessionStorage.setItem(LOGIN_TIME_KEY, new Date().toISOString());
-  window.dispatchEvent(new Event(AUTH_EVENT));
-}
-
-export function clearAdminSession() {
-  sessionStorage.removeItem(AUTH_KEY);
-  sessionStorage.removeItem(LOGIN_TIME_KEY);
-  window.dispatchEvent(new Event(AUTH_EVENT));
+export async function logoutAdmin() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+  setState(false);
 }
 
 function subscribe(callback: () => void) {
-  window.addEventListener(AUTH_EVENT, callback);
-  window.addEventListener('storage', callback);
-  return () => {
-    window.removeEventListener(AUTH_EVENT, callback);
-    window.removeEventListener('storage', callback);
-  };
+  listeners.add(callback);
+  if (!checked) refreshAdminSession();
+  return () => listeners.delete(callback);
 }
 
 export function useIsAdmin(): boolean {
-  return useSyncExternalStore(subscribe, readIsAdmin, () => false);
+  return useSyncExternalStore(subscribe, () => isAdminState, () => false);
 }
 
 /** Redirects to /login when no admin session exists. Returns whether the page may render. */
@@ -47,7 +68,9 @@ export function useAdminGuard(): boolean {
   const isAdmin = useIsAdmin();
 
   useEffect(() => {
-    if (!readIsAdmin()) router.replace('/login');
+    refreshAdminSession().then((ok) => {
+      if (!ok) router.replace('/login');
+    });
   }, [router]);
 
   return isAdmin;

@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { verifyAdminPassword } from '@/lib/supabase';
-import { readIsAdmin, setAdminSession } from '@/lib/auth';
+import { loginAdmin, refreshAdminSession } from '@/lib/auth';
 import { Lock, User, Eye, EyeOff, Loader2, QrCode } from 'lucide-react';
 import Link from 'next/link';
 import { Alert } from '@/components/ui';
@@ -17,10 +16,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (readIsAdmin()) router.replace('/admin');
+    refreshAdminSession().then((ok) => {
+      if (ok) router.replace('/admin');
+    });
   }, [router]);
 
-  const handleLogin = (e: React.SyntheticEvent) => {
+  const handleLogin = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -29,18 +30,13 @@ export default function LoginPage() {
       return;
     }
 
-    if (username.trim() !== 'adminGBT') {
-      setErrorMsg('Username tidak dikenal. Periksa huruf besar/kecil.');
-      return;
-    }
-
-    if (!verifyAdminPassword(password)) {
-      setErrorMsg('Password salah. Silakan coba lagi.');
-      return;
-    }
-
     setLoading(true);
-    setAdminSession();
+    const error = await loginAdmin(username.trim(), password);
+    if (error) {
+      setErrorMsg(error);
+      setLoading(false);
+      return;
+    }
     router.replace('/admin');
   };
 

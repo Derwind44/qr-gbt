@@ -40,13 +40,14 @@ export function compressImage(file: File, maxWidth = 800, quality = 0.7): Promis
 /**
  * Compress then upload to Google Drive. Falls back to the compressed Data URL when the upload fails.
  */
-export async function uploadPhoto(file: File): Promise<string> {
+export async function uploadPhoto(file: File, kind: 'profile' | 'ktp' = 'profile'): Promise<string> {
   const compressed = await compressImage(file, 800, 0.7);
 
   try {
     const blob = await (await fetch(compressed)).blob();
     const formData = new FormData();
     formData.append('file', new File([blob], file.name, { type: blob.type || 'image/jpeg' }));
+    formData.append('kind', kind);
 
     const res = await fetch('/api/upload-drive', { method: 'POST', body: formData });
     const data = await res.json();

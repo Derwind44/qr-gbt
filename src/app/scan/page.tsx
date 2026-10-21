@@ -1,20 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { getJemaatByCodeOrId, supabase } from '@/lib/supabase';
-import { Jemaat } from '@/lib/types';
+import { scanJemaat } from '@/lib/api';
+import { JemaatPublic } from '@/lib/types';
 import { useIsAdmin } from '@/lib/auth';
 import ScanResultModal from '@/components/ScanResultModal';
 import QrScanner from '@/components/QrScanner';
 import { BackLink } from '@/components/ui';
 import { Keyboard, Loader2, Search } from 'lucide-react';
 
-const DEMO_CODES = ['BU-0001060895', 'tok-sample', 'JE-0002140590'];
-
 export default function ScanPage() {
   const isAdmin = useIsAdmin();
   const [manualCode, setManualCode] = useState('');
-  const [scannedResult, setScannedResult] = useState<Jemaat | null>(null);
+  const [scannedResult, setScannedResult] = useState<JemaatPublic | null>(null);
   const [scannedCode, setScannedCode] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -24,7 +22,7 @@ export default function ScanPage() {
     setIsSearching(true);
     navigator.vibrate?.(50);
     try {
-      setScannedResult(await getJemaatByCodeOrId(code));
+      setScannedResult(await scanJemaat(code));
     } catch (err) {
       console.error(err);
       setScannedResult(null);
@@ -85,25 +83,6 @@ export default function ScanPage() {
             <span className="hidden min-[380px]:inline">Cari</span>
           </button>
         </div>
-
-        {!supabase && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 text-sm text-[#6B533E]">
-            <span>Contoh tes:</span>
-            {DEMO_CODES.map((code) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => {
-                  setManualCode(code);
-                  processQrCode(code);
-                }}
-                className="px-2.5 h-9 rounded-lg bg-[#FAF6F0] hover:bg-[#EFE5DB] text-[#3B2211] font-mono font-bold border border-[#C5A059]/30"
-              >
-                {code}
-              </button>
-            ))}
-          </div>
-        )}
       </form>
 
       <ScanResultModal

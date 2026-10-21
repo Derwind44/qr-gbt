@@ -2,7 +2,7 @@
 
 import { useId, useState, type ReactNode } from 'react';
 import { AlertCircle, Camera, Check, Link2, Loader2, Trash2 } from 'lucide-react';
-import { formatGoogleDriveUrl } from '@/lib/gdrive';
+import { formatGoogleDriveUrl, privateDriveImageUrl } from '@/lib/gdrive';
 
 export function Field({
   id,
@@ -142,6 +142,7 @@ export function PhotoUpload({
   value,
   onChange,
   variant = 'portrait',
+  kind = 'profile',
 }: {
   id: string;
   label: string;
@@ -149,6 +150,7 @@ export function PhotoUpload({
   value?: string;
   onChange: (url: string) => void;
   variant?: 'portrait' | 'document';
+  kind?: 'profile' | 'ktp';
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -163,7 +165,7 @@ export function PhotoUpload({
     setUploading(true);
     try {
       const { uploadPhoto } = await import('@/lib/imageUtils');
-      onChange(await uploadPhoto(file));
+      onChange(await uploadPhoto(file, kind));
     } catch (err) {
       console.error(err);
       setError('Foto gagal diproses. Coba pilih foto lain.');
@@ -180,7 +182,7 @@ export function PhotoUpload({
       {value ? (
         <div className="flex items-center gap-4">
           <div className={`relative overflow-hidden border-2 border-[#C5A059]/50 bg-[#EFE5DB] shrink-0 ${previewCls}`}>
-            <img src={formatGoogleDriveUrl(value)} alt={`Pratinjau ${label}`} className="w-full h-full object-cover" />
+            <img src={kind === 'ktp' ? privateDriveImageUrl(value) : formatGoogleDriveUrl(value)} alt={`Pratinjau ${label}`} className="w-full h-full object-cover" />
             {uploading && (
               <div className="absolute inset-0 bg-[#2B180B]/60 flex items-center justify-center">
                 <Loader2 className="w-6 h-6 text-[#F3E5C8] animate-spin" />

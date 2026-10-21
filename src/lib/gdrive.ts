@@ -65,6 +65,19 @@ export function formatGoogleDriveUrl(urlOrId?: string | null): string {
 }
 
 /**
+ * URL for a private Drive image (e.g. KTP). Drive files go through the admin-only proxy;
+ * other values (data URLs, legacy links) are returned unchanged.
+ */
+export function privateDriveImageUrl(urlOrId?: string | null): string {
+  if (!urlOrId) return '';
+  const clean = urlOrId.trim();
+  if (clean.startsWith('data:')) return clean;
+  const isDrive = !clean.startsWith('http') || clean.includes('drive.google.com') || clean.includes('googleusercontent.com');
+  const fileId = isDrive ? extractGoogleDriveFileId(clean) : null;
+  return fileId ? `/api/drive-file/${fileId}` : clean;
+}
+
+/**
  * Get configured Google Drive Folder ID from environment variables
  */
 export function getGoogleDriveFolderId(): string {

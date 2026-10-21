@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Jemaat } from '@/lib/types';
+import { JemaatPublic } from '@/lib/types';
 import { BadgeCheck, ChevronRight, SearchX, QrCode } from 'lucide-react';
 import { useIsAdmin } from '@/lib/auth';
 import { roleLabel } from '@/lib/options';
@@ -10,7 +10,7 @@ import { Avatar, Sheet, StatusBadge } from './ui';
 interface ScanResultModalProps {
   isOpen: boolean;
   onClose: () => void;
-  jemaat: Jemaat | null;
+  jemaat: JemaatPublic | null;
   scannedCode: string;
 }
 

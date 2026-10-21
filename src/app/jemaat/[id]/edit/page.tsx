@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getJemaatByCodeOrId, updateJemaat } from '@/lib/supabase';
+import { getJemaatByCodeOrId, updateJemaat } from '@/lib/api';
 import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
 import { setFlash } from '@/lib/flash';

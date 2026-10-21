@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getAllJemaat } from '@/lib/supabase';
+import { getAllJemaat } from '@/lib/api';
 import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
 import { takeFlash } from '@/lib/flash';

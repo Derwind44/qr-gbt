@@ -1,8 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { apiFetch } from "./api";
 
 // ============================================================
 // TYPES
@@ -27,7 +23,8 @@ export interface PresensiRecord {
 
 export type RecordPresensiResult =
   | { status: "success"; record: PresensiRecord }
-  | { status: "duplicate" }
+  | { status: "duplicate"; full_name: string }
+  | { status: "not_found" }
   | { status: "error"; message: string };
 
 // ============================================================
@@ -35,46 +32,30 @@ export type RecordPresensiResult =
 // ============================================================
 
 /** Fetch all sessions, newest first */
-export async function getSessions(): Promise<Session[]> {
-  const { data, error } = await supabase
-    .from("sessions")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Session[];
+export function getSessions(): Promise<Session[]> {
+  return apiFetch<Session[]>("/api/sessions");
 }
 
 /** Create a new session */
-export async function createSession(payload: {
+export function createSession(payload: {
   name: string;
   event_date: string;
   description?: string;
 }): Promise<Session> {
-  const { data, error } = await supabase
-    .from("sessions")
-    .insert([{ ...payload, is_active: true }])
-    .select()
-    .single();
-  if (error) throw error;
-  return data as Session;
+  return apiFetch<Session>("/api/sessions", { method: "POST", body: JSON.stringify(payload) });
 }
 
 /** Toggle session active status */
-export async function toggleSessionActive(
-  id: string,
-  is_active: boolean
-): Promise<void> {
-  const { error } = await supabase
-    .from("sessions")
-    .update({ is_active })
-    .eq("id", id);
-  if (error) throw error;
+export async function toggleSessionActive(id: string, is_active: boolean): Promise<void> {
+  await apiFetch(`/api/sessions/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_active }),
+  });
 }
 
 /** Delete a session (cascade deletes all presensi for it) */
 export async function deleteSession(id: string): Promise<void> {
-  const { error } = await supabase.from("sessions").delete().eq("id", id);
-  if (error) throw error;
+  await apiFetch(`/api/sessions/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 // ============================================================
@@ -82,56 +63,22 @@ export async function deleteSession(id: string): Promise<void> {
 // ============================================================
 
 /**
- * Record a jemaat presence in a session.
- * Returns 'success', 'duplicate' (already scanned), or 'error'.
+ * Record presence for the jemaat behind a scanned code.
+ * The server resolves the code, so the client never sends names or ids it could spoof.
  */
-export async function recordPresensi(params: {
-  session_id: string;
-  jemaat_id: string;
-  id_jemaat: string;
-  full_name: string;
-}): Promise<RecordPresensiResult> {
-  // Check for duplicate first
-  const { data: existing } = await supabase
-    .from("presensi")
-    .select("id")
-    .eq("session_id", params.session_id)
-    .eq("id_jemaat", params.id_jemaat)
-    .maybeSingle();
-
-  if (existing) {
-    return { status: "duplicate" };
-  }
-
-  const { data, error } = await supabase
-    .from("presensi")
-    .insert([params])
-    .select()
-    .single();
-
-  if (error) return { status: "error", message: error.message };
-  return { status: "success", record: data as PresensiRecord };
+export function recordPresensi(params: { session_id: string; code: string }): Promise<RecordPresensiResult> {
+  return apiFetch<RecordPresensiResult>("/api/presensi", { method: "POST", body: JSON.stringify(params) });
 }
 
 /** Get all presensi records for a session, newest first */
-export async function getPresensiBySession(
-  session_id: string
-): Promise<PresensiRecord[]> {
-  const { data, error } = await supabase
-    .from("presensi")
-    .select("*")
-    .eq("session_id", session_id)
-    .order("scan_time", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as PresensiRecord[];
+export function getPresensiBySession(session_id: string): Promise<PresensiRecord[]> {
+  return apiFetch<PresensiRecord[]>(`/api/presensi?session_id=${encodeURIComponent(session_id)}`);
 }
 
 /** Count total present jemaat for a session */
 export async function countPresensi(session_id: string): Promise<number> {
-  const { count, error } = await supabase
-    .from("presensi")
-    .select("*", { count: "exact", head: true })
-    .eq("session_id", session_id);
-  if (error) throw error;
-  return count ?? 0;
+  const { count } = await apiFetch<{ count: number }>(
+    `/api/presensi?session_id=${encodeURIComponent(session_id)}&count=1`,
+  );
+  return count;
 }

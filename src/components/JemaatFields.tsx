@@ -131,6 +131,7 @@ export function DataDiriFields({ data, onChange, errors = {}, strict }: SectionP
           label="Foto KTP (boleh dikosongkan)"
           hint="Pastikan tulisan terbaca"
           variant="document"
+          kind="ktp"
           value={data.ktp_photo_url}
           onChange={(ktp_photo_url) => onChange({ ktp_photo_url })}
         />

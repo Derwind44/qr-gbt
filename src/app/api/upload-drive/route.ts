@@ -1,65 +1,59 @@
 import { NextResponse } from 'next/server';
-import { google } from 'googleapis';
 import { Readable } from 'stream';
-import { createClient } from '@supabase/supabase-js';
+import { isAdminRequest, unauthorized } from '@/lib/server/guard';
+import { getDrive } from '@/lib/server/googleDrive';
+import { db } from '@/lib/server/supabaseAdmin';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
+/**
+ * Form field `kind`: 'profile' (default, shared publicly for the QR card) or 'ktp' (kept private,
+ * viewed only through /api/drive-file/[id]).
+ */
 export async function POST(request: Request) {
+  if (!(await isAdminRequest())) return unauthorized();
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const folderId = process.env.NEXT_PUBLIC_GDRIVE_FOLDER_ID || process.env.GDRIVE_FOLDER_ID;
+    const isKtp = formData.get('kind') === 'ktp';
+    const folderId = isKtp
+      ? process.env.GDRIVE_KTP_FOLDER_ID
+      : process.env.GDRIVE_FOLDER_ID || process.env.NEXT_PUBLIC_GDRIVE_FOLDER_ID;
 
     if (!file) {
       return NextResponse.json({ error: 'Tidak ada file yang diunggah.' }, { status: 400 });
     }
+    if (!file.type.startsWith('image/') || file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: 'File harus gambar dan maksimal 5 MB.' }, { status: 400 });
+    }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const fileName = `gbt_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fileName = `gbt_${isKtp ? 'ktp_' : ''}${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
-    // METHOD 1: Try Google Drive API Upload
-    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    let privateKey = process.env.GOOGLE_PRIVATE_KEY;
-
-    if (email && privateKey) {
+    // METHOD 1: Google Drive
+    const drive = getDrive();
+    if (drive && (folderId || !isKtp)) {
       try {
-        privateKey = privateKey.replace(/\\n/g, '\n');
-        const auth = new google.auth.JWT({
-          email,
-          key: privateKey,
-          scopes: ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive'],
-        });
-
-        const drive = google.drive({ version: 'v3', auth });
-        const stream = new Readable();
-        stream.push(buffer);
-        stream.push(null);
-
-        const fileMetadata: any = { name: fileName };
-        if (folderId) fileMetadata.parents = [folderId];
-
         const response = await drive.files.create({
-          requestBody: fileMetadata,
-          media: { mimeType: file.type || 'image/jpeg', body: stream },
+          requestBody: { name: fileName, ...(folderId && { parents: [folderId] }) },
+          media: { mimeType: file.type || 'image/jpeg', body: Readable.from(buffer) },
           supportsAllDrives: true,
-          supportsTeamDrives: true,
-          fields: 'id, name, webViewLink',
+          fields: 'id',
         });
 
         const fileId = response.data.id;
         if (fileId) {
-          try {
-            await drive.permissions.create({
-              fileId: fileId,
-              supportsAllDrives: true,
-              supportsTeamDrives: true,
-              requestBody: { role: 'reader', type: 'anyone' },
-            });
-          } catch (pErr) {
-            console.warn('Set permission warning:', pErr);
+          if (!isKtp) {
+            try {
+              await drive.permissions.create({
+                fileId,
+                supportsAllDrives: true,
+                requestBody: { role: 'reader', type: 'anyone' },
+              });
+            } catch (pErr) {
+              console.warn('Set permission warning:', pErr);
+            }
           }
 
           return NextResponse.json({
@@ -70,15 +64,15 @@ export async function POST(request: Request) {
             fileName,
           });
         }
-      } catch (gdriveErr: any) {
-        console.warn('Google Drive Service Account Quota Notice, switching to Supabase Storage:', gdriveErr?.message || gdriveErr);
+      } catch (gdriveErr) {
+        console.warn('Google Drive upload failed, using fallback:', gdriveErr instanceof Error ? gdriveErr.message : gdriveErr);
       }
     }
 
-    // METHOD 2: Fail-safe Fallback to Supabase Storage Bucket ('jemaat-photos')
-    if (supabaseUrl && supabaseAnonKey) {
+    // METHOD 2: Public Supabase Storage bucket ('jemaat-photos') — profile photos only
+    if (!isKtp && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       try {
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const supabase = db();
         const { data: uploadData, error: uploadErr } = await supabase.storage
           .from('jemaat-photos')
           .upload(fileName, buffer, {
@@ -105,22 +99,16 @@ export async function POST(request: Request) {
       }
     }
 
-    // METHOD 3: High-Res Compressed Data URL Fallback
-    const base64 = buffer.toString('base64');
+    // METHOD 3: Compressed Data URL, stored in the (private) database row
     const mime = file.type || 'image/jpeg';
-    const dataUrl = `data:${mime};base64,${base64}`;
-
     return NextResponse.json({
       success: true,
       storage: 'dataurl',
-      url: dataUrl,
+      url: `data:${mime};base64,${buffer.toString('base64')}`,
       fileName,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error('Upload Error:', err);
-    return NextResponse.json(
-      { error: err.message || 'Gagal mengunggah foto.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Gagal mengunggah foto.' }, { status: 500 });
   }
 }

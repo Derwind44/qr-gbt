@@ -40,6 +40,23 @@ export interface Jemaat {
   updated_at?: string;
 }
 
+/** Fields safe to show on the public /scan page. */
+export type JemaatPublic = Pick<
+  Jemaat,
+  | 'id'
+  | 'id_jemaat'
+  | 'full_name'
+  | 'profile_photo_url'
+  | 'church_role'
+  | 'status'
+  | 'category'
+  | 'join_year'
+  | 'joined_divisions'
+>;
+
+export const JEMAAT_PUBLIC_COLUMNS =
+  'id,id_jemaat,full_name,profile_photo_url,church_role,status,category,join_year,joined_divisions';
+
 export interface ScanResultModalProps {
   isOpen: boolean;
   onClose: () => void;

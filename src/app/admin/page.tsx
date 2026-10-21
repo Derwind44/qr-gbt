@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { QrCode, Users, UserPlus, ChevronRight, ClipboardList } from 'lucide-react';
-import { getAllJemaat } from '@/lib/supabase';
+import { getAllJemaat } from '@/lib/api';
 import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
 import { roleLabel } from '@/lib/options';

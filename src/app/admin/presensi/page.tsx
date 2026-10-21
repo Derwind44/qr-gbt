@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getJemaatByCodeOrId } from '@/lib/supabase';
 import {
   getSessions,
   createSession,
@@ -124,23 +123,12 @@ export default function AdminPresensiPage() {
     const sessionId = activeSessionId;
     if (!code || !sessionId) return;
     try {
-      const jemaat = await getJemaatByCodeOrId(code);
-      if (!jemaat) {
-        showFeedback({ type: 'not_found', name: code });
-        return;
-      }
-
-      const result = await recordPresensi({
-        session_id: sessionId,
-        jemaat_id: jemaat.id || jemaat.id_jemaat || code,
-        id_jemaat: jemaat.id_jemaat || code,
-        full_name: jemaat.full_name,
-      });
+      const result = await recordPresensi({ session_id: sessionId, code });
 
       if (result.status === 'duplicate') {
-        showFeedback({ type: 'duplicate', name: jemaat.full_name });
+        showFeedback({ type: 'duplicate', name: result.full_name });
       } else if (result.status === 'success') {
-        showFeedback({ type: 'success', name: jemaat.full_name });
+        showFeedback({ type: 'success', name: result.record.full_name });
         setPresensiList((prev) => [result.record, ...prev]);
       } else {
         showFeedback({ type: 'not_found', name: code });

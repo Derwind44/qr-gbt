@@ -3,12 +3,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getJemaatByCodeOrId, deleteJemaat } from '@/lib/supabase';
+import { getJemaatByCodeOrId, deleteJemaat } from '@/lib/api';
 import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
 import { setFlash, takeFlash } from '@/lib/flash';
 import { formatDate, roleLabel, toWhatsAppNumber } from '@/lib/options';
-import { formatGoogleDriveUrl } from '@/lib/gdrive';
+import { privateDriveImageUrl } from '@/lib/gdrive';
 import QRCard from '@/components/QRCard';
 import {
   Avatar,
@@ -241,9 +241,9 @@ export default function JemaatDetailPage() {
                 <FileText className="w-5 h-5 text-[#C5A059]" />
                 Foto KTP
               </h2>
-              <a href={formatGoogleDriveUrl(jemaat.ktp_photo_url)} target="_blank" rel="noopener noreferrer" className="block">
+              <a href={privateDriveImageUrl(jemaat.ktp_photo_url)} target="_blank" rel="noopener noreferrer" className="block">
                 <img
-                  src={formatGoogleDriveUrl(jemaat.ktp_photo_url)}
+                  src={privateDriveImageUrl(jemaat.ktp_photo_url)}
                   alt="Foto KTP"
                   loading="lazy"
                   decoding="async"
