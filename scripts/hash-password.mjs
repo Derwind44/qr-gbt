@@ -10,4 +10,4 @@ if (!password || password.length < 10) {
 
 const salt = randomBytes(16);
 const hash = scryptSync(password, salt, 64);
-console.log(`scrypt$${salt.toString("hex")}$${hash.toString("hex")}`);
+console.log(`scrypt:${salt.toString("hex")}:${hash.toString("hex")}`);
