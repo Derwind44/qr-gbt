@@ -40,4 +40,9 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Private bucket for KTP photos uploaded from the app (viewed via 60s signed URLs from /api/ktp).
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('ktp', 'ktp', false, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp'])
+ON CONFLICT (id) DO UPDATE SET public = false;
+
 NOTIFY pgrst, 'reload schema';

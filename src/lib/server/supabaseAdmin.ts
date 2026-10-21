@@ -1,5 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
+export const KTP_BUCKET = "ktp";
+
 let client: SupabaseClient | null = null;
 
 /** Server-only Supabase client using the service role key. Never import from client components. */

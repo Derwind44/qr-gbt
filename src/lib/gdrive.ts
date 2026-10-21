@@ -65,16 +65,22 @@ export function formatGoogleDriveUrl(urlOrId?: string | null): string {
 }
 
 /**
- * URL for a private Drive image (e.g. KTP). Drive files go through the admin-only proxy;
- * other values (data URLs, legacy links) are returned unchanged.
+ * How to show a KTP photo. Values saved as `storage:<path>` live in the private Supabase bucket and
+ * are served through the admin-only /api/ktp route; Google Form uploads stay in (restricted) Drive
+ * and can only be opened there.
  */
-export function privateDriveImageUrl(urlOrId?: string | null): string {
-  if (!urlOrId) return '';
-  const clean = urlOrId.trim();
-  if (clean.startsWith('data:')) return clean;
-  const isDrive = !clean.startsWith('http') || clean.includes('drive.google.com') || clean.includes('googleusercontent.com');
-  const fileId = isDrive ? extractGoogleDriveFileId(clean) : null;
-  return fileId ? `/api/drive-file/${fileId}` : clean;
+export type KtpView = { src: string } | { driveUrl: string } | null;
+
+export function ktpView(value?: string | null): KtpView {
+  const clean = value?.trim();
+  if (!clean) return null;
+  if (clean.startsWith('storage:')) return { src: `/api/ktp?path=${encodeURIComponent(clean.slice(8))}` };
+  if (clean.startsWith('data:')) return { src: clean };
+  const fileId = extractGoogleDriveFileId(clean);
+  if (fileId && (!clean.startsWith('http') || clean.includes('google'))) {
+    return { driveUrl: `https://drive.google.com/file/d/${fileId}/view` };
+  }
+  return { src: clean };
 }
 
 /**

@@ -1,14 +1,15 @@
+import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
 import { Readable } from 'stream';
 import { isAdminRequest, unauthorized } from '@/lib/server/guard';
 import { getDrive } from '@/lib/server/googleDrive';
-import { db } from '@/lib/server/supabaseAdmin';
+import { db, KTP_BUCKET } from '@/lib/server/supabaseAdmin';
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 /**
- * Form field `kind`: 'profile' (default, shared publicly for the QR card) or 'ktp' (kept private,
- * viewed only through /api/drive-file/[id]).
+ * Form field `kind`: 'profile' (default, Google Drive shared publicly for the QR card) or 'ktp'
+ * (private Supabase bucket, saved as `storage:<path>` and viewed only through /api/ktp).
  */
 export async function POST(request: Request) {
   if (!(await isAdminRequest())) return unauthorized();
@@ -17,9 +18,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const isKtp = formData.get('kind') === 'ktp';
-    const folderId = isKtp
-      ? process.env.GDRIVE_KTP_FOLDER_ID
-      : process.env.GDRIVE_FOLDER_ID || process.env.NEXT_PUBLIC_GDRIVE_FOLDER_ID;
+    const folderId = process.env.GDRIVE_FOLDER_ID || process.env.NEXT_PUBLIC_GDRIVE_FOLDER_ID;
 
     if (!file) {
       return NextResponse.json({ error: 'Tidak ada file yang diunggah.' }, { status: 400 });
@@ -29,11 +28,18 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const fileName = `gbt_${isKtp ? 'ktp_' : ''}${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const fileName = `gbt_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+
+    if (isKtp) {
+      const ktpPath = `${randomUUID()}.${file.type.split('/')[1]?.replace(/[^a-z0-9]/g, '') || 'jpg'}`;
+      const { error } = await db().storage.from(KTP_BUCKET).upload(ktpPath, buffer, { contentType: file.type });
+      if (error) throw error;
+      return NextResponse.json({ success: true, storage: 'supabase-private', url: `storage:${ktpPath}`, fileName });
+    }
 
     // METHOD 1: Google Drive
     const drive = getDrive();
-    if (drive && (folderId || !isKtp)) {
+    if (drive) {
       try {
         const response = await drive.files.create({
           requestBody: { name: fileName, ...(folderId && { parents: [folderId] }) },
@@ -44,16 +50,14 @@ export async function POST(request: Request) {
 
         const fileId = response.data.id;
         if (fileId) {
-          if (!isKtp) {
-            try {
-              await drive.permissions.create({
-                fileId,
-                supportsAllDrives: true,
-                requestBody: { role: 'reader', type: 'anyone' },
-              });
-            } catch (pErr) {
-              console.warn('Set permission warning:', pErr);
-            }
+          try {
+            await drive.permissions.create({
+              fileId,
+              supportsAllDrives: true,
+              requestBody: { role: 'reader', type: 'anyone' },
+            });
+          } catch (pErr) {
+            console.warn('Set permission warning:', pErr);
           }
 
           return NextResponse.json({
@@ -69,8 +73,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // METHOD 2: Public Supabase Storage bucket ('jemaat-photos') — profile photos only
-    if (!isKtp && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    // METHOD 2: Public Supabase Storage bucket ('jemaat-photos')
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const supabase = db();
         const { data: uploadData, error: uploadErr } = await supabase.storage
@@ -99,7 +103,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // METHOD 3: Compressed Data URL, stored in the (private) database row
+    // METHOD 3: Compressed Data URL
     const mime = file.type || 'image/jpeg';
     return NextResponse.json({
       success: true,

@@ -8,7 +8,7 @@ import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
 import { setFlash, takeFlash } from '@/lib/flash';
 import { formatDate, roleLabel, toWhatsAppNumber } from '@/lib/options';
-import { privateDriveImageUrl } from '@/lib/gdrive';
+import { ktpView } from '@/lib/gdrive';
 import QRCard from '@/components/QRCard';
 import {
   Avatar,
@@ -20,7 +20,7 @@ import {
   Toast,
   useToast,
 } from '@/components/ui';
-import { User, Heart, Church, FileText, Pencil, Trash2, Phone, MessageCircle, UserX, QrCode } from 'lucide-react';
+import { User, Heart, Church, FileText, Pencil, Trash2, Phone, MessageCircle, UserX, QrCode, ExternalLink } from 'lucide-react';
 
 function InfoSection({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
@@ -122,6 +122,8 @@ export default function JemaatDetailPage() {
       </div>
     );
   }
+
+  const ktp = ktpView(jemaat.ktp_photo_url);
 
   const waNumber = toWhatsAppNumber(jemaat.phone);
   const birth = [jemaat.birth_place, jemaat.birth_date ? formatDate(jemaat.birth_date) : ''].filter(Boolean).join(', ');
@@ -235,22 +237,29 @@ export default function JemaatDetailPage() {
             <InfoRow label="Divisi yang Diikuti" value={jemaat.joined_divisions?.length ? <Tags items={jemaat.joined_divisions} gold /> : undefined} wide />
           </InfoSection>
 
-          {jemaat.ktp_photo_url && (
+          {ktp && (
             <section className="card p-5 sm:p-6">
               <h2 className="flex items-center gap-2 text-base font-black text-[#2B180B] mb-3">
                 <FileText className="w-5 h-5 text-[#C5A059]" />
                 Foto KTP
               </h2>
-              <a href={privateDriveImageUrl(jemaat.ktp_photo_url)} target="_blank" rel="noopener noreferrer" className="block">
-                <img
-                  src={privateDriveImageUrl(jemaat.ktp_photo_url)}
-                  alt="Foto KTP"
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full max-w-sm rounded-2xl object-cover border border-[#C5A059]/30"
-                />
-                <span className="block mt-2 text-sm font-semibold text-[#6B533E]">Ketuk foto untuk memperbesar</span>
-              </a>
+              {'src' in ktp ? (
+                <a href={ktp.src} target="_blank" rel="noopener noreferrer" className="block">
+                  <img
+                    src={ktp.src}
+                    alt="Foto KTP"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full max-w-sm rounded-2xl object-cover border border-[#C5A059]/30"
+                  />
+                  <span className="block mt-2 text-sm font-semibold text-[#6B533E]">Ketuk foto untuk memperbesar</span>
+                </a>
+              ) : (
+                <a href={ktp.driveUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                  <ExternalLink className="w-5 h-5" />
+                  Buka di Google Drive
+                </a>
+              )}
             </section>
           )}
 

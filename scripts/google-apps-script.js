@@ -12,10 +12,9 @@
  *      - keepAliveSupabase  : Berbasis waktu -> setiap 3 hari (opsional)
  * 4. Jalankan lockKtpFiles() SATU KALI dari editor untuk menutup akses publik foto KTP lama.
  *
- * Foto KTP TIDAK dibuat publik. Share folder "(File responses)" milik Form ke:
- *   - email Google para pengurus (Viewer), dan
- *   - email service account aplikasi (Viewer), supaya admin bisa melihat KTP di aplikasi.
- * Pastikan "Akses umum" folder = Dibatasi / Restricted.
+ * Foto KTP TIDAK dibuat publik. Share folder "(File responses)" milik Form hanya ke email
+ * Google para pengurus (Viewer), dengan "Akses umum" = Dibatasi / Restricted.
+ * Di aplikasi, KTP dari Form muncul sebagai tombol "Buka di Google Drive".
  */
 
 const COLUMN_KTP = "Foto KTP";

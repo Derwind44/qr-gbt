@@ -1,8 +1,8 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
-import { AlertCircle, Camera, Check, Link2, Loader2, Trash2 } from 'lucide-react';
-import { formatGoogleDriveUrl, privateDriveImageUrl } from '@/lib/gdrive';
+import { AlertCircle, Camera, Check, ExternalLink, Link2, Loader2, Trash2 } from 'lucide-react';
+import { formatGoogleDriveUrl, ktpView } from '@/lib/gdrive';
 
 export function Field({
   id,
@@ -155,6 +155,7 @@ export function PhotoUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileId = useId();
+  const preview = kind === 'ktp' ? ktpView(value) : { src: formatGoogleDriveUrl(value) };
   const previewCls = variant === 'portrait' ? 'w-28 h-28 rounded-2xl' : 'w-full max-w-xs aspect-[1.6] rounded-2xl';
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,7 +183,14 @@ export function PhotoUpload({
       {value ? (
         <div className="flex items-center gap-4">
           <div className={`relative overflow-hidden border-2 border-[#C5A059]/50 bg-[#EFE5DB] shrink-0 ${previewCls}`}>
-            <img src={kind === 'ktp' ? privateDriveImageUrl(value) : formatGoogleDriveUrl(value)} alt={`Pratinjau ${label}`} className="w-full h-full object-cover" />
+            {preview && 'driveUrl' in preview ? (
+              <a href={preview.driveUrl} target="_blank" rel="noopener noreferrer" className="w-full h-full flex flex-col items-center justify-center gap-1 text-sm font-bold text-[#3B2211]">
+                <ExternalLink className="w-5 h-5" />
+                Buka di Drive
+              </a>
+            ) : (
+              <img src={preview?.src ?? ''} alt={`Pratinjau ${label}`} className="w-full h-full object-cover" />
+            )}
             {uploading && (
               <div className="absolute inset-0 bg-[#2B180B]/60 flex items-center justify-center">
                 <Loader2 className="w-6 h-6 text-[#F3E5C8] animate-spin" />

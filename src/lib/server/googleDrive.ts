@@ -18,20 +18,3 @@ export function getDrive(): drive_v3.Drive | null {
   return drive;
 }
 
-/** Removes "anyone with the link" access. Returns false when the service account may not change sharing. */
-export async function removePublicAccess(fileId: string): Promise<boolean> {
-  const client = getDrive();
-  if (!client) return false;
-
-  const { data } = await client.permissions.list({
-    fileId,
-    supportsAllDrives: true,
-    fields: "permissions(id,type)",
-  });
-  for (const p of data.permissions ?? []) {
-    if (p.type === "anyone" && p.id) {
-      await client.permissions.delete({ fileId, permissionId: p.id, supportsAllDrives: true });
-    }
-  }
-  return true;
-}
