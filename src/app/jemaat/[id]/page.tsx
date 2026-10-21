@@ -7,7 +7,7 @@ import { getJemaatByCodeOrId, deleteJemaat } from '@/lib/api';
 import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
 import { setFlash, takeFlash } from '@/lib/flash';
-import { formatDate, roleLabel, toWhatsAppNumber } from '@/lib/options';
+import { displayName, formatDate, roleLabel, toWhatsAppNumber } from '@/lib/options';
 import { ktpView } from '@/lib/gdrive';
 import QRCard from '@/components/QRCard';
 import {
@@ -137,7 +137,7 @@ export default function JemaatDetailPage() {
         <div className="flex items-start gap-4">
           <Avatar name={jemaat.full_name} src={jemaat.profile_photo_url} size="lg" />
           <div className="min-w-0 flex-1 space-y-1.5">
-            <h1 className="text-xl sm:text-2xl font-black text-[#2B180B] tracking-tight leading-tight break-words">{jemaat.full_name}</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-[#2B180B] tracking-tight leading-tight break-words">{displayName(jemaat.full_name)}</h1>
             <p className="text-sm font-mono font-bold text-[#6B533E]">{jemaat.id_jemaat || jemaat.id}</p>
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="px-2.5 py-0.5 rounded-full bg-[#3B2211] text-[#F3E5C8] text-xs font-bold">{roleLabel(jemaat)}</span>
@@ -211,10 +211,10 @@ export default function JemaatDetailPage() {
           </InfoSection>
 
           <InfoSection icon={<Heart className="w-5 h-5" />} title="Data Keluarga">
-            <InfoRow label="Nama Ayah" value={jemaat.father_name} />
-            <InfoRow label="Nama Ibu" value={jemaat.mother_name} />
+            <InfoRow label="Nama Ayah" value={displayName(jemaat.father_name)} />
+            <InfoRow label="Nama Ibu" value={displayName(jemaat.mother_name)} />
             <InfoRow label="Status Pernikahan" value={jemaat.marital_status} />
-            <InfoRow label="Nama Pasangan" value={jemaat.spouse_name} />
+            <InfoRow label="Nama Pasangan" value={displayName(jemaat.spouse_name)} />
             <InfoRow label="Jumlah Anak" value={jemaat.children_count} />
             {jemaat.children_detail && <InfoRow label="Nama & Tanggal Lahir Anak" value={jemaat.children_detail} wide />}
           </InfoSection>
@@ -283,7 +283,7 @@ export default function JemaatDetailPage() {
         title="Hapus data jemaat?"
         message={
           <>
-            Data <strong>{jemaat.full_name}</strong> akan dihapus permanen dan kartu QR-nya tidak bisa dipakai lagi.
+            Data <strong>{displayName(jemaat.full_name)}</strong> akan dihapus permanen dan kartu QR-nya tidak bisa dipakai lagi.
           </>
         }
         loading={deleting}

@@ -6,7 +6,7 @@ import { QrCode, Users, UserPlus, ChevronRight, ClipboardList } from 'lucide-rea
 import { getAllJemaat } from '@/lib/api';
 import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
-import { roleLabel } from '@/lib/options';
+import { displayName, roleLabel } from '@/lib/options';
 import { Avatar, StatusBadge } from '@/components/ui';
 
 function greeting() {
@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
                 <Link key={j.id} href={`/jemaat/${j.id}`} className="flex items-center gap-3 p-3.5 hover:bg-[#FAF6F0] active:bg-[#F3E5C8]/40">
                   <Avatar name={j.full_name} src={j.profile_photo_url} size="sm" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[15px] text-[#2B180B] truncate">{j.full_name}</p>
+                    <p className="font-bold text-[15px] text-[#2B180B] truncate">{displayName(j.full_name)}</p>
                     <p className="text-sm text-[#6B533E] truncate">{roleLabel(j)}</p>
                   </div>
                   <StatusBadge status={j.status} />

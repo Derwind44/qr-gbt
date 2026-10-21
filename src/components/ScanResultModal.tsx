@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { JemaatPublic } from '@/lib/types';
 import { BadgeCheck, ChevronRight, SearchX, QrCode } from 'lucide-react';
 import { useIsAdmin } from '@/lib/auth';
-import { roleLabel } from '@/lib/options';
+import { displayName, roleLabel } from '@/lib/options';
 import { Avatar, Sheet, StatusBadge } from './ui';
 
 interface ScanResultModalProps {
@@ -37,7 +37,7 @@ export default function ScanResultModal({ isOpen, onClose, jemaat, scannedCode }
                 <BadgeCheck className="w-4 h-4" />
                 Jemaat terdaftar
               </p>
-              <h3 className="text-xl font-black text-[#2B180B] leading-tight break-words">{jemaat.full_name}</h3>
+              <h3 className="text-xl font-black text-[#2B180B] leading-tight break-words">{displayName(jemaat.full_name)}</h3>
               <p className="text-sm font-mono font-bold text-[#6B533E]">{jemaat.id_jemaat || jemaat.id}</p>
             </div>
           </div>

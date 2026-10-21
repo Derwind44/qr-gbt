@@ -6,7 +6,7 @@ import { getAllJemaat } from '@/lib/api';
 import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
 import { takeFlash } from '@/lib/flash';
-import { CATEGORY_FILTERS, roleLabel } from '@/lib/options';
+import { CATEGORY_FILTERS, displayName, roleLabel } from '@/lib/options';
 import { Search, Users, ChevronRight, UserPlus, X, SearchX } from 'lucide-react';
 import { Avatar, EmptyState, PageHeader, StatusBadge, Toast, useToast } from '@/components/ui';
 
@@ -187,7 +187,7 @@ export default function JemaatListPage() {
                 >
                   <Avatar name={item.full_name} src={item.profile_photo_url} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[15px] text-[#2B180B] truncate">{item.full_name}</p>
+                    <p className="font-bold text-[15px] text-[#2B180B] truncate">{displayName(item.full_name)}</p>
                     <p className="text-sm text-[#6B533E] truncate">
                       {roleLabel(item)}
                       <span className="text-[#C5A059]"> · </span>

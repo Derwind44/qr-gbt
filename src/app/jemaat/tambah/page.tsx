@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { createJemaat } from '@/lib/api';
 import { Jemaat } from '@/lib/types';
+import { displayName } from '@/lib/options';
 import { useAdminGuard } from '@/lib/auth';
 import QRCard from '@/components/QRCard';
 import { Alert, BackLink } from '@/components/ui';
@@ -137,7 +138,7 @@ export default function TambahJemaatPage() {
           </div>
           <h1 className="text-2xl font-black text-[#2B180B]">Berhasil Didaftarkan!</h1>
           <p className="text-[15px] text-[#6B533E]">
-            <strong className="text-[#2B180B]">{createdJemaat.full_name}</strong> sudah terdaftar dengan ID
+            <strong className="text-[#2B180B]">{displayName(createdJemaat.full_name)}</strong> sudah terdaftar dengan ID
           </p>
           <p className="inline-block px-4 py-1.5 rounded-xl bg-[#3B2211]/10 font-mono font-black text-lg text-[#3B2211]">
             {createdJemaat.id_jemaat}

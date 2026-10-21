@@ -12,7 +12,7 @@ import {
   PresensiRecord,
 } from '@/lib/presensi';
 import { useAdminGuard } from '@/lib/auth';
-import { formatDate, todayLocal } from '@/lib/options';
+import { displayName, formatDate, todayLocal } from '@/lib/options';
 import QrScanner from '@/components/QrScanner';
 import { BackLink, ConfirmDialog, EmptyState, PageHeader, Sheet, Toast, useToast } from '@/components/ui';
 import { Field } from '@/components/form';
@@ -419,7 +419,7 @@ export default function AdminPresensiPage() {
                     <li key={record.id} className="flex items-center gap-3 py-2.5">
                       <span className="w-7 text-right font-mono text-sm font-bold text-[#9A7B38] shrink-0">{totalCount - i}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-[15px] text-[#2B180B] truncate">{record.full_name}</p>
+                        <p className="font-bold text-[15px] text-[#2B180B] truncate">{displayName(record.full_name)}</p>
                         <p className="text-[13px] text-[#6B533E] font-mono truncate">{record.id_jemaat}</p>
                       </div>
                       <span className="text-sm text-[#6B533E] shrink-0">{timeOf(record.scan_time)}</span>
@@ -470,7 +470,7 @@ export default function AdminPresensiPage() {
               {presensiList.slice(0, 15).map((r, i) => (
                 <div key={r.id} className="flex items-center justify-between text-xs border-b border-[#C5A059]/15 pb-1">
                   <span className="text-[#C5A059] font-bold w-6 shrink-0">{i + 1}.</span>
-                  <span className="flex-1 font-bold text-[#2B180B]">{r.full_name}</span>
+                  <span className="flex-1 font-bold text-[#2B180B]">{displayName(r.full_name)}</span>
                   <span className="text-[#8C6D4F] font-mono text-[10px]">{timeOf(r.scan_time)}</span>
                 </div>
               ))}

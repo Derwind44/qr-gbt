@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Jemaat } from '@/lib/types';
+import { displayName } from '@/lib/options';
 import { Download, RotateCw, Loader2 } from 'lucide-react';
 import { formatGoogleDriveUrl } from '@/lib/gdrive';
 
@@ -46,7 +47,7 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
   if (categoryText === 'Pelayanan/Aktivis gereja') categoryText = 'Pelayan';
 
   const phoneText = jemaat.phone || '-';
-  const nameLines = splitNameToMaxTwoLines(jemaat.full_name);
+  const nameLines = splitNameToMaxTwoLines(displayName(jemaat.full_name));
 
   // Card is valid for 3 years from when the record (and its card) was created, not from join_year.
   const issuedYear = new Date(jemaat.created_at || Date.now()).getFullYear();

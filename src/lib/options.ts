@@ -25,9 +25,19 @@ export const STATUS_OPTIONS = ['Aktif', 'Nonaktif', 'Meninggal'] as const;
 
 export const CATEGORY_FILTERS = ['Semua', 'Pelayan', 'Pemuda', 'Anak', 'Jemaat Umum'];
 
+/**
+ * Display-only Title Case for names typed in ALL CAPS or all lowercase.
+ * Mixed-case input (e.g. "McDonald") is shown as typed; stored data is never changed.
+ */
+export function displayName(value?: string | null): string {
+  const clean = (value ?? '').trim().replace(/\s+/g, ' ');
+  if (clean !== clean.toUpperCase() && clean !== clean.toLowerCase()) return clean;
+  return clean.toLowerCase().replace(/(^|[\s\-'(.])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase());
+}
+
 export function roleLabel(j: Pick<Jemaat, 'church_role'>): string {
   if (j.church_role === 'Pelayanan/Aktivis gereja') return 'Pelayan';
-  return j.church_role || 'Anggota';
+  return displayName(j.church_role) || 'Anggota';
 }
 
 /** Local date as YYYY-MM-DD (toISOString would give yesterday's date before 07:00 WIB). */
