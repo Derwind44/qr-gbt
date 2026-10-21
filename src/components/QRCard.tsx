@@ -48,14 +48,9 @@ export default function QRCard({ jemaat, showDownloadBtn = true }: QRCardProps) 
   const phoneText = jemaat.phone || '-';
   const nameLines = splitNameToMaxTwoLines(jemaat.full_name);
 
-  // Calculate Next Level Year
-  let validUntilText = 'VALID UNTIL: DEC 2028';
-  if (jemaat.join_year) {
-    const yr = parseInt(jemaat.join_year, 10);
-    if (!isNaN(yr)) {
-      validUntilText = `VALID UNTIL: DEC ${yr + 3}`;
-    }
-  }
+  // Card is valid for 3 years from when the record (and its card) was created, not from join_year.
+  const issuedYear = new Date(jemaat.created_at || Date.now()).getFullYear();
+  const validUntilText = `VALID UNTIL: DEC ${(isNaN(issuedYear) ? new Date().getFullYear() : issuedYear) + 3}`;
 
   const handleDownloadCard = async () => {
     if (!cardRef.current || isDownloading) return;
