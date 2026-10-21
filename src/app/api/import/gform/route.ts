@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { serverError, unauthorized } from "@/lib/server/guard";
-import { insertJemaat } from "@/lib/server/jemaat";
+import { insertJemaat, purgeExpiredTrash } from "@/lib/server/jemaat";
 import { db } from "@/lib/server/supabaseAdmin";
 
 /** Called by the Google Apps Script with header `x-import-secret: <IMPORT_SECRET>`. */
@@ -26,13 +26,14 @@ export async function POST(request: Request) {
   }
 }
 
-/** Keep-alive ping so the free Supabase project is not paused. */
+/** Daily keep-alive ping (keeps the free Supabase project awake) that also empties expired trash. */
 export async function GET(request: Request) {
   if (!hasValidSecret(request)) return unauthorized();
   try {
     const { error } = await db().from("jemaat").select("id").limit(1);
     if (error) throw error;
-    return NextResponse.json({ ok: true });
+    const trash = await purgeExpiredTrash();
+    return NextResponse.json({ ok: true, ...trash });
   } catch (err) {
     return serverError(err, "Database tidak dapat dihubungi.");
   }

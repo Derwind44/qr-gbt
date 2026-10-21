@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminRequest, serverError, unauthorized } from "@/lib/server/guard";
-import { findJemaat, patchJemaat, removeJemaat } from "@/lib/server/jemaat";
+import { findJemaat, patchJemaat, trashJemaat } from "@/lib/server/jemaat";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -29,7 +29,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
 export async function DELETE(_request: Request, { params }: Ctx) {
   if (!(await isAdminRequest())) return unauthorized();
   try {
-    return (await removeJemaat(decodeURIComponent((await params).id))) ? NextResponse.json({ ok: true }) : notFound();
+    return (await trashJemaat(decodeURIComponent((await params).id))) ? NextResponse.json({ ok: true }) : notFound();
   } catch (err) {
     return serverError(err, "Gagal menghapus data jemaat.");
   }

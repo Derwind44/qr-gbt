@@ -95,7 +95,7 @@ export default function JemaatDetailPage() {
     const success = await deleteJemaat(jemaat.id);
     setDeleting(false);
     if (success) {
-      setFlash(`Data ${jemaat.full_name} sudah dihapus.`);
+      setFlash(`Data ${displayName(jemaat.full_name)} dipindah ke Sampah.`);
       router.push('/jemaat');
     } else {
       setConfirmOpen(false);
@@ -280,12 +280,14 @@ export default function JemaatDetailPage() {
 
       <ConfirmDialog
         open={confirmOpen}
-        title="Hapus data jemaat?"
+        title="Pindahkan ke Sampah?"
         message={
           <>
-            Data <strong>{displayName(jemaat.full_name)}</strong> akan dihapus permanen dan kartu QR-nya tidak bisa dipakai lagi.
+            Data <strong>{displayName(jemaat.full_name)}</strong> dipindah ke Sampah dan kartu QR-nya langsung tidak berlaku.
+            Masih bisa dipulihkan selama 30 hari, setelah itu terhapus permanen.
           </>
         }
+        confirmLabel="Ya, Pindahkan"
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setConfirmOpen(false)}

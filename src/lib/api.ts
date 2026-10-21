@@ -60,3 +60,25 @@ export async function deleteJemaat(code: string): Promise<boolean> {
     return false;
   }
 }
+
+export interface TrashedJemaat {
+  id: string;
+  id_jemaat: string;
+  full_name: string;
+  profile_photo_url?: string;
+  ktp_photo_url?: string;
+  deleted_at: string;
+}
+
+export function getTrash(): Promise<{ retentionDays: number; items: TrashedJemaat[] }> {
+  return apiFetch("/api/trash");
+}
+
+export async function restoreJemaat(id: string): Promise<void> {
+  await apiFetch(`/api/trash/${encodeURIComponent(id)}`, { method: "POST" });
+}
+
+/** Returns the Drive link of a Google Form KTP that still has to be deleted by hand. */
+export async function purgeJemaat(id: string): Promise<{ driveKtpUrl?: string }> {
+  return apiFetch(`/api/trash/${encodeURIComponent(id)}`, { method: "DELETE" });
+}

@@ -7,7 +7,7 @@ import { Jemaat } from '@/lib/types';
 import { useAdminGuard } from '@/lib/auth';
 import { takeFlash } from '@/lib/flash';
 import { CATEGORY_FILTERS, displayName, roleLabel } from '@/lib/options';
-import { Search, Users, ChevronRight, UserPlus, X, SearchX } from 'lucide-react';
+import { Search, Users, ChevronRight, UserPlus, X, SearchX, Trash2 } from 'lucide-react';
 import { Avatar, EmptyState, PageHeader, StatusBadge, Toast, useToast } from '@/components/ui';
 
 const PAGE_SIZE = 40;
@@ -79,10 +79,16 @@ export default function JemaatListPage() {
         title="Daftar Jemaat"
         subtitle={loading ? 'Memuat data…' : `${jemaatList.length} jemaat terdaftar`}
         action={
-          <Link href="/jemaat/tambah" className="btn btn-primary hidden sm:inline-flex">
-            <UserPlus className="w-5 h-5 text-[#D4AF37]" />
-            Tambah Jemaat
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/jemaat/sampah" className="btn btn-ghost btn-sm text-[#6B533E]">
+              <Trash2 className="w-4 h-4" />
+              Sampah
+            </Link>
+            <Link href="/jemaat/tambah" className="btn btn-primary hidden sm:inline-flex">
+              <UserPlus className="w-5 h-5 text-[#D4AF37]" />
+              Tambah Jemaat
+            </Link>
+          </div>
         }
       />
 
